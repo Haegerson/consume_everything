@@ -1,5 +1,6 @@
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/adapters.dart';
+import 'categories.dart';
 part 'incomes.g.dart';
 
 @HiveType(typeId: 1)
@@ -11,7 +12,7 @@ class Incomes extends HiveObject {
       required this.date});
 
   @HiveField(0)
-  String category;
+  Categories category;
 
   @HiveField(1)
   double amount;

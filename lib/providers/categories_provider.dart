@@ -1,0 +1,48 @@
+import 'package:expenso/hives/categories.dart';
+import 'package:hive/hive.dart';
+import 'package:flutter/foundation.dart';
+import 'dart:collection';
+
+class CategoriesProvider extends ChangeNotifier {
+  List<Categories> _categories = [];
+  UnmodifiableListView<Categories> get categories =>
+      UnmodifiableListView(_categories);
+  final String categoriesHiveBox = 'categories-box';
+
+  // Create test categories
+  Future<void> createCategory(Categories cat) async {
+    Box<Categories> box = await Hive.openBox<Categories>(categoriesHiveBox);
+
+    if (!box.values.contains(cat)) {
+      print("adding category...");
+      await box.add(cat);
+      _categories.add(cat);
+      _categories = box.values.toList();
+      notifyListeners();
+    } else {}
+  }
+
+  // FOR DEBUG ONLY
+  Future<void> deleteAllCategories() async {
+    Box<Categories> box = await Hive.openBox<Categories>(categoriesHiveBox);
+
+    print("deleting categories...");
+    await box.clear();
+    notifyListeners();
+  }
+
+  // Get test categories
+  Future<List<Categories>> getCategories() async {
+    Box<Categories> box = await Hive.openBox<Categories>(categoriesHiveBox);
+    _categories = box.values.toList();
+    return _categories;
+  }
+
+  // remove a test category
+  Future<void> deleteCategory(Categories cat) async {
+    Box<Categories> box = await Hive.openBox<Categories>(categoriesHiveBox);
+    await box.delete(cat.key);
+    _categories = box.values.toList();
+    notifyListeners();
+  }
+}

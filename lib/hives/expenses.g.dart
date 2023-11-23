@@ -17,7 +17,7 @@ class ExpensesAdapter extends TypeAdapter<Expenses> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return Expenses(
-      category: fields[0] as String,
+      category: fields[0] as Categories,
       amount: fields[1] as double,
       comment: fields[2] as String?,
       date: fields[3] as DateTime,
