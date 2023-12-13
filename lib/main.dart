@@ -1,5 +1,6 @@
 // ignore_for_file: prefer_const_constructors, avoid_print
 
+import 'package:expenso/dialog_utils.dart';
 import 'package:expenso/providers/categories_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/adapters.dart';
@@ -54,57 +55,6 @@ class _OverviewScreenState extends State<OverviewScreen> {
   Widget build(BuildContext context) {
     CategoriesProvider categProvider = Provider.of<CategoriesProvider>(context);
     ExpensesProvider expensesProvider = Provider.of<ExpensesProvider>(context);
-
-    void showAddExpenseDialog(BuildContext context, List<String> categNames,
-        Expenses newExp, ExpensesProvider expensesProvider) {
-      var dropDownValue = categNames.first;
-      showDialog(
-          context: context,
-          builder: (_) => AlertDialog(
-                title: Text("Add expense"),
-                content: Column(
-                  children: [
-                    Row(
-                      children: [
-                        DropdownButton<String>(
-                            value: dropDownValue,
-                            //style:
-                            //underline:
-                            icon: null,
-                            items: categNames.map((value) {
-                              return DropdownMenuItem(
-                                value: value,
-                                child: Text(value),
-                              );
-                            }).toList(),
-                            onChanged: (String? newValue) {
-                              setState(() {
-                                dropDownValue = newValue!;
-                              });
-                            }),
-                        GestureDetector(
-                          child: Icon(
-                            Icons.add,
-                            color: Colors.white,
-                          ),
-                          onTap: () {
-                            expensesProvider.createExpense(newExp);
-                          },
-                        )
-                      ],
-                    ),
-                  ],
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                    child: Text("Cancel"),
-                  ),
-                ],
-              ));
-    }
 
     Categories cat = Categories(name: "test", type: "consume");
     List<Categories> categories = [];
@@ -174,8 +124,10 @@ class _OverviewScreenState extends State<OverviewScreen> {
               print(categNames);
               Expenses newExp = Expenses(
                   category: categories[0], amount: 0, date: DateTime.now());
-              showAddExpenseDialog(
-                  context, categNames, newExp, expensesProvider);
+              DialogUtils.showAddExpenseDialog(
+                  context, categNames, newExp, expensesProvider, () {
+                setState(() {});
+              });
             },
             tooltip: 'Increment',
             child: const Icon(Icons.add),
