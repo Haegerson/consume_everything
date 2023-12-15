@@ -8,7 +8,7 @@ class Expenses extends HiveObject {
   Expenses(
       {required this.category,
       required this.amount,
-      this.comment,
+      this.comment = "",
       required this.date});
 
   @HiveField(0)

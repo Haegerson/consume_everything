@@ -119,13 +119,9 @@ class _OverviewScreenState extends State<OverviewScreen> {
           FloatingActionButton(
             onPressed: () async {
               categories = await categProvider.getCategories();
-              List<String> categNames =
-                  categories.map((element) => element.name).toList();
-              print(categNames);
-              Expenses newExp = Expenses(
-                  category: categories[0], amount: 0, date: DateTime.now());
+
               DialogUtils.showAddExpenseDialog(
-                  context, categNames, newExp, expensesProvider, () {
+                  context, categories, expensesProvider, () {
                 setState(() {});
               });
             },

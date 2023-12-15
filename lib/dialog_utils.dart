@@ -1,3 +1,6 @@
+// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
+
+import 'package:expenso/hives/categories.dart';
 import 'package:expenso/hives/expenses.dart';
 import 'package:expenso/providers/expense_provider.dart';
 import 'package:flutter/material.dart';
@@ -41,11 +44,18 @@ class DialogUtils {
 
   static void showAddExpenseDialog(
       BuildContext context,
-      List<String> categNames,
-      Expenses newExp,
+      List<Categories> categories,
       ExpensesProvider expensesProvider,
       VoidCallback setStateCallback) {
+    List<String> categNames =
+        categories.map((element) => element.name).toList();
     var dropDownValue = categNames.first;
+    print(categNames);
+    Expenses newExp =
+        Expenses(category: categories[0], amount: 0.0, date: DateTime.now());
+    TextEditingController amountController = TextEditingController();
+    TextEditingController dateController = TextEditingController();
+    TextEditingController commentController = TextEditingController();
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -82,9 +92,50 @@ class DialogUtils {
                 )
               ],
             ),
+            TextField(
+              controller: amountController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(labelText: 'Amount'),
+            ),
+            TextField(
+              controller: dateController,
+              readOnly: true,
+              onTap: () async {
+                DateTime? selectedDate = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.now(),
+                  firstDate: DateTime(2000),
+                  lastDate: DateTime(2101),
+                );
+                if (selectedDate != null) {
+                  dateController.text = selectedDate.toLocal().toString();
+                }
+              },
+              decoration: InputDecoration(labelText: 'Date'),
+            ),
+            TextField(
+              controller: commentController,
+              decoration: InputDecoration(labelText: 'Comment'),
+            ),
           ],
         ),
         actions: [
+          TextButton(
+            onPressed: () {
+              // Update newExp with the entered values
+              newExp.amount = double.parse(amountController.text);
+              newExp.date = DateTime.parse(dateController.text);
+              newExp.comment = commentController.text;
+
+              // Add the new Expense to database:
+
+              expensesProvider.createExpense(newExp);
+
+              // Close the dialog
+              Navigator.of(context).pop();
+            },
+            child: Text("Save"),
+          ),
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();

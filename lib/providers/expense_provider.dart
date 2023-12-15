@@ -9,7 +9,7 @@ class ExpensesProvider extends ChangeNotifier {
       UnmodifiableListView(_expenses);
   final String expensesHiveBox = 'expenses-box';
 
-  // Create test expense
+  // Add a new Expense
   Future<void> createExpense(Expenses exp) async {
     Box<Expenses> box = await Hive.openBox<Expenses>(expensesHiveBox);
     await box.add(exp);
