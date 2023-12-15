@@ -1,6 +1,5 @@
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/adapters.dart';
-import 'package:expenso/enumerators.dart';
 part "categories.g.dart";
 
 @HiveType(typeId: 2)

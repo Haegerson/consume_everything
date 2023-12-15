@@ -1,4 +1,4 @@
-// ignore_for_file: prefer_const_constructors, avoid_print
+// ignore_for_file: prefer_const_constructors, avoid_print, prefer_const_constructors_in_immutables
 
 import 'package:expenso/dialog_utils.dart';
 import 'package:expenso/providers/categories_provider.dart';
@@ -12,6 +12,7 @@ import 'package:expenso/providers/expense_provider.dart';
 import 'package:expenso/providers/incomes_provider.dart';
 import 'package:expenso/providers/category_data.dart';
 import 'package:expenso/enumerators.dart';
+import 'package:expenso/screens/history_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -104,11 +105,34 @@ class _OverviewScreenState extends State<OverviewScreen> {
                 },
               )),
               Expanded(
-                  child: GestureDetector(
-                      child: Container(
-                margin: EdgeInsets.all(5),
-                color: Colors.red,
-              ))),
+                child: GestureDetector(
+                  onTap: () {
+                    // Navigate to another screen when tapped
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => HistoryScreen()),
+                    );
+                  },
+                  child: Container(
+                    margin: EdgeInsets.all(5),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.white), // Outline color
+                      borderRadius: BorderRadius.circular(
+                          10), // Optional: for rounded corners
+                    ),
+                    child: Center(
+                      child: Text(
+                        'History',
+                        style: TextStyle(
+                          color: Colors.white, // Text color
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -117,6 +141,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
           FloatingActionButton(
+            heroTag: "addExpense",
             onPressed: () async {
               categories = await categProvider.getCategories();
 
