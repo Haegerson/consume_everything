@@ -56,6 +56,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
   Widget build(BuildContext context) {
     CategoriesProvider categProvider = Provider.of<CategoriesProvider>(context);
     ExpensesProvider expensesProvider = Provider.of<ExpensesProvider>(context);
+    IncomesProvider incomesProvider = Provider.of<IncomesProvider>(context);
 
     Categories cat = Categories(name: "test", type: "consume");
     List<Categories> categories = [];
@@ -158,8 +159,8 @@ class _OverviewScreenState extends State<OverviewScreen> {
             onPressed: () async {
               categories = await categProvider.getCategories();
 
-              DialogUtils.showAddExpenseDialog(
-                  context, categories, expensesProvider, () {
+              DialogUtils.showAddIncomeDialog(
+                  context, categories, incomesProvider, () {
                 setState(() {});
               });
             },

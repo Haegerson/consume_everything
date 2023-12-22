@@ -3,40 +3,116 @@
 import 'package:expenso/hives/categories.dart';
 import 'package:expenso/hives/expenses.dart';
 import 'package:expenso/hives/incomes.dart';
+import 'package:expenso/providers/categories_provider.dart';
 import 'package:expenso/providers/expense_provider.dart';
 import 'package:expenso/providers/incomes_provider.dart';
+import 'package:provider/provider.dart';
+
 import 'package:flutter/material.dart';
 import 'package:expenso/const/constants.dart';
 
 class DialogUtils {
+  // static void showAddCategoryDialog(BuildContext context) {
+  //   showDialog(
+  //     context: context,
+  //     builder: (_) => AlertDialog(
+  //       title: Text("Add Category"),
+  //       content: Column(
+  //         children: [
+  //           // Add widgets for additional features here
+  //           // For example:
+  //           TextField(
+  //             decoration: InputDecoration(labelText: 'lalala 1'),
+  //             // Add controller and other properties as needed
+  //           ),
+  //           // Add more widgets as needed
+  //         ],
+  //       ),
+  //       actions: [
+  //         TextButton(
+  //           onPressed: () {
+  //             // Add logic to handle additional features
+  //             // For example, update your data or perform other actions
+  //             Navigator.of(context).pop();
+  //           },
+  //           child: Text("Apply"),
+  //         ),
+  //         TextButton(
+  //           onPressed: () {
+  //             Navigator.of(context).pop();
+  //           },
+  //           child: Text("Cancel"),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
+
   static void showAddCategoryDialog(BuildContext context) {
+    String selectedType =
+        categoryTypes[0]; // Initialize with the first category type
+    TextEditingController nameController = TextEditingController();
+    CategoriesProvider categProvider = Provider.of<CategoriesProvider>(context);
+
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
         title: Text("Add Category"),
         content: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Add widgets for additional features here
-            // For example:
+            // Dropdown for category type
+            Text("Category Type"),
+            DropdownButton<String>(
+              value: selectedType,
+              onChanged: (String? newValue) {
+                if (newValue != null) {
+                  // Update the selectedType when the dropdown changes
+                  selectedType = newValue;
+                }
+              },
+              items: categoryTypes.map((String type) {
+                return DropdownMenuItem<String>(
+                  value: type,
+                  child: Text(type),
+                );
+              }).toList(),
+            ),
+            SizedBox(height: 16.0), // Add some spacing
+
+            // Text field for category name
+            Text("Category Name"),
             TextField(
-              decoration: InputDecoration(labelText: 'lalala 1'),
+              decoration: InputDecoration(labelText: 'Enter category name'),
               // Add controller and other properties as needed
             ),
-            // Add more widgets as needed
           ],
         ),
         actions: [
           TextButton(
             onPressed: () {
               // Add logic to handle additional features
-              // For example, update your data or perform other actions
-              Navigator.of(context).pop();
+              // For example, create a new category with the selected type and name
+              final String categoryName = // Get the entered category name
+                  // You can access the text field's value using its controller or other methods
+                  // For now, let's assume you have a TextEditingController named 'nameController'
+                  (nameController.text.isEmpty)
+                      ? "Untitled"
+                      : nameController.text;
+
+              Categories newCategory =
+                  Categories(name: categoryName, type: selectedType);
+
+              // Add logic to save the new category to your data store
+              categProvider.createCategory(newCategory);
+
+              Navigator.of(context).pop(); // Close the dialog
             },
             child: Text("Apply"),
           ),
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop();
+              Navigator.of(context).pop(); // Close the dialog
             },
             child: Text("Cancel"),
           ),
