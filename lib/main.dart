@@ -150,15 +150,21 @@ class _OverviewScreenState extends State<OverviewScreen> {
                 setState(() {});
               });
             },
-            tooltip: 'Increment',
-            child: const Icon(Icons.add),
+            tooltip: 'Add Expense',
+            child: const Text("Exp"),
           ),
           FloatingActionButton(
+            heroTag: "addIncome",
             onPressed: () async {
-              // Hier Income Dialog
+              categories = await categProvider.getCategories();
+
+              DialogUtils.showAddExpenseDialog(
+                  context, categories, expensesProvider, () {
+                setState(() {});
+              });
             },
-            tooltip: 'Decrease',
-            child: const Icon(Icons.remove),
+            tooltip: 'Add Income',
+            child: const Text("Inc"),
           ),
         ],
       ),
