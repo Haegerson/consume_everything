@@ -53,15 +53,31 @@ class ExpenseTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      title: Text(expense.category.name),
-      subtitle: Text(
-          'Amount: \$${expense.amount.toStringAsFixed(2)}\nDate: ${expense.date.toString()}'),
-      // You can customize the subtitle to display comment if it's not null
-      // and format the date according to your preference.
-      onTap: () {
-        // Handle tile tap if needed, e.g., navigate to a detailed view
+    return Dismissible(
+      key: Key(expense.key.toString()), // Use a unique key for each tile
+      background: Container(
+        color: Colors.red, // Set the background color when swiping
+        alignment: Alignment.centerRight,
+        padding: EdgeInsets.only(right: 16.0),
+        child: Icon(
+          Icons.delete,
+          color: Colors.white,
+        ),
+      ),
+      direction: DismissDirection.endToStart,
+      onDismissed: (direction) {
+        // Handle the dismissal here:
+        Provider.of<ExpensesProvider>(context, listen: false)
+            .deleteExpense(expense);
       },
+      child: ListTile(
+        title: Text(expense.category.name),
+        subtitle: Text(
+            'Amount: \$${expense.amount.toStringAsFixed(2)}\nDate: ${expense.date.toString()}'),
+        onTap: () {
+          // Handle tile tap if needed, e.g., navigate to a detailed view
+        },
+      ),
     );
   }
 }
