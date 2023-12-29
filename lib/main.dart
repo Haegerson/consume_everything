@@ -1,7 +1,9 @@
 // ignore_for_file: prefer_const_constructors, avoid_print, prefer_const_constructors_in_immutables
 
-import 'package:expenso/dialog_utils.dart';
+import 'package:expenso/const/constants.dart';
+import 'package:expenso/old%20trash/dialog_utils.dart';
 import 'package:expenso/providers/categories_provider.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:provider/provider.dart';
@@ -11,8 +13,8 @@ import 'package:expenso/hives/categories.dart';
 import 'package:expenso/providers/expense_provider.dart';
 import 'package:expenso/providers/incomes_provider.dart';
 import 'package:expenso/providers/category_data.dart';
-import 'package:expenso/enumerators.dart';
 import 'package:expenso/screens/history_screen.dart';
+import 'package:expenso/dropdowns.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -58,8 +60,164 @@ class _OverviewScreenState extends State<OverviewScreen> {
     ExpensesProvider expensesProvider = Provider.of<ExpensesProvider>(context);
     IncomesProvider incomesProvider = Provider.of<IncomesProvider>(context);
 
-    Categories cat = Categories(name: "test", type: "consume");
-    List<Categories> categories = [];
+    void showAddCategoryDialog(BuildContext context) {
+      TextEditingController nameController = TextEditingController();
+      String selectedType = CategoryType.consumption;
+
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: Text("Add Category"),
+          content: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Dropdown for category type
+              Text("Category Type"),
+              DropdownCategoryTypes(
+                onTypeSelected: (String type) {
+                  setState(() {
+                    selectedType = type; // Update the selected category
+                  });
+                },
+              ),
+              SizedBox(height: 16.0), // Add some spacing
+
+              // Text field for category name
+              Text("Category Name"),
+              TextField(
+                controller: nameController,
+                decoration: InputDecoration(labelText: 'Enter category name'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                final String categoryName = // Get the entered category name
+                    (nameController.text.isEmpty)
+                        ? "Untitled"
+                        : nameController.text;
+
+                Categories newCategory =
+                    Categories(name: categoryName, type: "consume");
+
+                // Add logic to save the new category to your data store
+                await categProvider.createCategory(newCategory);
+                await categProvider.printCategories();
+
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: Text("Apply"),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: Text("Cancel"),
+            ),
+          ],
+        ),
+      );
+    }
+
+    void showAddExpenseDialog(BuildContext context) async {
+      List<Categories> categories = await categProvider.getCategories();
+      String selectedCategoryName = "";
+      Categories selectedCategory = categories[0];
+
+      Expenses newExp =
+          Expenses(category: categories[0], amount: 0.0, date: DateTime.now());
+      TextEditingController amountController = TextEditingController();
+      TextEditingController dateController = TextEditingController();
+      TextEditingController commentController = TextEditingController();
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: Text("Add expense"),
+          content: Column(
+            children: [
+              Row(
+                children: [
+                  DropdownCategoryNames(
+                    onCategorySelected: (String category) {
+                      setState(() {
+                        selectedCategoryName =
+                            category; // Update the selected category
+                      });
+                    },
+                  ),
+                  GestureDetector(
+                    child: Icon(
+                      Icons.add,
+                      color: Colors.white,
+                    ),
+                    onTap: () {
+                      // Trigger another dialog for adding categories
+                      showAddCategoryDialog(context);
+                    },
+                  )
+                ],
+              ),
+              TextField(
+                controller: amountController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(labelText: 'Amount'),
+              ),
+              TextField(
+                controller: dateController,
+                readOnly: true,
+                onTap: () async {
+                  DateTime? selectedDate = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now(),
+                    firstDate: DateTime(2000),
+                    lastDate: DateTime(2101),
+                  );
+                  if (selectedDate != null) {
+                    dateController.text = selectedDate.toLocal().toString();
+                  }
+                },
+                decoration: InputDecoration(labelText: 'Date'),
+              ),
+              TextField(
+                controller: commentController,
+                decoration: InputDecoration(labelText: 'Comment'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                // Update newExp with the entered values
+                selectedCategory =
+                    categProvider.getCategoryByName(selectedCategoryName);
+                newExp.category = selectedCategory;
+                newExp.amount = double.parse(amountController.text);
+                newExp.date = DateTime.parse(dateController.text);
+                newExp.comment = commentController.text;
+
+                // Add the new Expense to database:
+
+                expensesProvider.createExpense(newExp);
+
+                // Close the dialog
+                Navigator.of(context).pop();
+              },
+              child: Text("Save"),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text("Cancel"),
+            ),
+          ],
+        ),
+      );
+    }
+
+    Categories cat = Categories(name: "test", type: CategoryType.consumption);
+    // List<Categories> categories = [];
     Expenses exp = Expenses(
       category: cat,
       amount: 10.0,
@@ -83,12 +241,10 @@ class _OverviewScreenState extends State<OverviewScreen> {
                   color: Colors.red,
                 ),
                 onTap: () async {
-                  categories = await categProvider.getCategories();
+                  // categories = await categProvider.getCategories();
                   await categProvider.createCategory(cat);
                   await expensesProvider.createExpense(exp);
                   setState(() {});
-                  print("categories are");
-                  print(categories);
                 },
               )),
               Expanded(
@@ -98,11 +254,9 @@ class _OverviewScreenState extends State<OverviewScreen> {
                   color: Colors.lightGreen, // DELETE CATEGORIES
                 ),
                 onTap: () async {
-                  categories = await categProvider.getCategories();
+                  // categories = await categProvider.getCategories();
                   await categProvider.deleteAllCategories();
                   setState(() {});
-                  print("categories are:");
-                  print(categories);
                 },
               )),
               Expanded(
@@ -143,13 +297,8 @@ class _OverviewScreenState extends State<OverviewScreen> {
         children: [
           FloatingActionButton(
             heroTag: "addExpense",
-            onPressed: () async {
-              categories = await categProvider.getCategories();
-
-              DialogUtils.showAddExpenseDialog(
-                  context, categories, expensesProvider, () {
-                setState(() {});
-              });
+            onPressed: () {
+              showAddExpenseDialog(context);
             },
             tooltip: 'Add Expense',
             child: const Text("Exp"),
@@ -157,10 +306,8 @@ class _OverviewScreenState extends State<OverviewScreen> {
           FloatingActionButton(
             heroTag: "addIncome",
             onPressed: () async {
-              categories = await categProvider.getCategories();
-
               DialogUtils.showAddIncomeDialog(
-                  context, categories, incomesProvider, () {
+                  context, incomesProvider, categProvider, () {
                 setState(() {});
               });
             },

@@ -45,4 +45,18 @@ class CategoriesProvider extends ChangeNotifier {
     _categories = box.values.toList();
     notifyListeners();
   }
+
+  // Print the name and type of each category
+  Future<void> printCategories() async {
+    Box<Categories> box = await Hive.openBox<Categories>(categoriesHiveBox);
+
+    for (Categories category in box.values) {
+      print("Category Name: ${category.name}, Type: ${category.type}");
+    }
+  }
+
+  // Get a category by name
+  Categories getCategoryByName(String categoryName) {
+    return _categories.firstWhere((category) => category.name == categoryName);
+  }
 }

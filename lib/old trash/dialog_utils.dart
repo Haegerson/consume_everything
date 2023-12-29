@@ -12,47 +12,13 @@ import 'package:flutter/material.dart';
 import 'package:expenso/const/constants.dart';
 
 class DialogUtils {
-  // static void showAddCategoryDialog(BuildContext context) {
-  //   showDialog(
-  //     context: context,
-  //     builder: (_) => AlertDialog(
-  //       title: Text("Add Category"),
-  //       content: Column(
-  //         children: [
-  //           // Add widgets for additional features here
-  //           // For example:
-  //           TextField(
-  //             decoration: InputDecoration(labelText: 'lalala 1'),
-  //             // Add controller and other properties as needed
-  //           ),
-  //           // Add more widgets as needed
-  //         ],
-  //       ),
-  //       actions: [
-  //         TextButton(
-  //           onPressed: () {
-  //             // Add logic to handle additional features
-  //             // For example, update your data or perform other actions
-  //             Navigator.of(context).pop();
-  //           },
-  //           child: Text("Apply"),
-  //         ),
-  //         TextButton(
-  //           onPressed: () {
-  //             Navigator.of(context).pop();
-  //           },
-  //           child: Text("Cancel"),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
-
-  static void showAddCategoryDialog(BuildContext context) {
+  static void showAddCategoryDialog(
+      BuildContext context, VoidCallback setStateCallback) {
     String selectedType =
         categoryTypes[0]; // Initialize with the first category type
     TextEditingController nameController = TextEditingController();
-    CategoriesProvider categProvider = Provider.of<CategoriesProvider>(context);
+    CategoriesProvider categProvider =
+        Provider.of<CategoriesProvider>(context, listen: false);
 
     showDialog(
       context: context,
@@ -83,19 +49,15 @@ class DialogUtils {
             // Text field for category name
             Text("Category Name"),
             TextField(
+              controller: nameController,
               decoration: InputDecoration(labelText: 'Enter category name'),
-              // Add controller and other properties as needed
             ),
           ],
         ),
         actions: [
           TextButton(
-            onPressed: () {
-              // Add logic to handle additional features
-              // For example, create a new category with the selected type and name
+            onPressed: () async {
               final String categoryName = // Get the entered category name
-                  // You can access the text field's value using its controller or other methods
-                  // For now, let's assume you have a TextEditingController named 'nameController'
                   (nameController.text.isEmpty)
                       ? "Untitled"
                       : nameController.text;
@@ -104,7 +66,9 @@ class DialogUtils {
                   Categories(name: categoryName, type: selectedType);
 
               // Add logic to save the new category to your data store
-              categProvider.createCategory(newCategory);
+              await categProvider.createCategory(newCategory);
+              setStateCallback();
+              await categProvider.printCategories();
 
               Navigator.of(context).pop(); // Close the dialog
             },
@@ -123,17 +87,36 @@ class DialogUtils {
 
   static void showAddExpenseDialog(
       BuildContext context,
-      List<Categories> categories,
+      // List<Categories> categories,
       ExpensesProvider expensesProvider,
-      VoidCallback setStateCallback) {
+      CategoriesProvider categProvider,
+      VoidCallback setStateCallback) async {
+    List<Categories> categories = await categProvider.getCategories();
     List<String> categNames = categories
         .where((element) =>
             (element.type == CategoryType.consumption) ||
             (element.type == CategoryType.savings))
         .map((element) => element.name)
         .toList();
+
     var dropDownValue = categNames.first;
-    print(categNames);
+    Key dropDownKey = UniqueKey();
+
+    void updateCategoryNames() async {
+      categories = await categProvider.getCategories();
+      categNames = categories
+          .where((element) =>
+              (element.type == CategoryType.consumption) ||
+              (element.type == CategoryType.savings))
+          .map((element) => element.name)
+          .toList();
+      setStateCallback();
+      // Update the key to trigger a rebuild
+      dropDownKey = UniqueKey();
+
+      print("Update Categories called!");
+    }
+
     Expenses newExp =
         Expenses(category: categories[0], amount: 0.0, date: DateTime.now());
     TextEditingController amountController = TextEditingController();
@@ -148,6 +131,7 @@ class DialogUtils {
             Row(
               children: [
                 DropdownButton<String>(
+                  key: dropDownKey,
                   value: dropDownValue,
                   //style:
                   //underline:
@@ -160,7 +144,9 @@ class DialogUtils {
                   }).toList(),
                   onChanged: (String? newValue) {
                     dropDownValue = newValue!;
-                    setStateCallback;
+                    print("before" + dropDownValue + newValue);
+                    setStateCallback();
+                    print("after" + dropDownValue + newValue);
                   },
                 ),
                 GestureDetector(
@@ -169,8 +155,10 @@ class DialogUtils {
                     color: Colors.white,
                   ),
                   onTap: () {
-                    // Trigger another dialog for additional features
-                    DialogUtils.showAddCategoryDialog(context);
+                    // Trigger another dialog for adding categories
+                    DialogUtils.showAddCategoryDialog(context, () {
+                      updateCategoryNames();
+                    });
                   },
                 )
               ],
@@ -232,9 +220,11 @@ class DialogUtils {
 
   static void showAddIncomeDialog(
       BuildContext context,
-      List<Categories> categories,
+      // List<Categories> categories,
       IncomesProvider incomesProvider,
-      VoidCallback setStateCallback) {
+      CategoriesProvider categProvider,
+      VoidCallback setStateCallback) async {
+    List<Categories> categories = await categProvider.getCategories();
     List<String> categNames = categories
         .where((element) => element.type == CategoryType.income)
         .map((element) => element.name)
@@ -277,7 +267,8 @@ class DialogUtils {
                   ),
                   onTap: () {
                     // Trigger another dialog for additional features
-                    DialogUtils.showAddCategoryDialog(context);
+                    DialogUtils.showAddCategoryDialog(
+                        context, setStateCallback);
                   },
                 )
               ],
