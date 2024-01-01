@@ -4,44 +4,64 @@ import 'package:expenso/providers/expense_provider.dart';
 import 'package:expenso/hives/expenses.dart';
 
 class HistoryScreen extends StatefulWidget {
-  const HistoryScreen({super.key});
-
+  const HistoryScreen({Key? key}) : super(key: key);
   @override
   State<HistoryScreen> createState() => _HistoryScreenState();
 }
 
-class _HistoryScreenState extends State<HistoryScreen> {
+class _HistoryScreenState extends State<HistoryScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Expense History'),
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: [
+            Tab(text: 'Expenses'),
+            Tab(text: 'Incomes'),
+          ],
+        ),
       ),
-      body: Consumer<ExpensesProvider>(
-        builder: (context, expensesProvider, child) {
-          return FutureBuilder<List<Expenses>>(
-            future: expensesProvider.getExpenses(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                // If the Future is still running, show a loading indicator
-                return CircularProgressIndicator();
-              } else if (snapshot.hasError) {
-                // If the Future completed with an error, show an error message
-                return Text('Error: ${snapshot.error}');
-              } else {
-                // If the Future is completed successfully, build the ListView
-                List<Expenses> expenseList = snapshot.data ?? [];
-                return ListView.builder(
-                  itemCount: expenseList.length,
-                  itemBuilder: (context, index) {
-                    return ExpenseTile(expense: expenseList[index]);
-                  },
-                );
-              }
-            },
-          );
-        },
-      ),
+      body: TabBarView(controller: _tabController, children: [
+        // Expsenses Tab
+        Consumer<ExpensesProvider>(
+          builder: (context, expensesProvider, child) {
+            return FutureBuilder<List<Expenses>>(
+              future: expensesProvider.getExpenses(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  // If the Future is still running, show a loading indicator
+                  return CircularProgressIndicator();
+                } else if (snapshot.hasError) {
+                  // If the Future completed with an error, show an error message
+                  return Text('Error: ${snapshot.error}');
+                } else {
+                  // If the Future is completed successfully, build the ListView
+                  List<Expenses> expenseList = snapshot.data ?? [];
+                  return ListView.builder(
+                    itemCount: expenseList.length,
+                    itemBuilder: (context, index) {
+                      return ExpenseTile(expense: expenseList[index]);
+                    },
+                  );
+                }
+              },
+            );
+          },
+        ),
+        // Incomes Tab
+        Container(child: Center(child: Text('Incomes Tab'))),
+      ]),
     );
   }
 }
