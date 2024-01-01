@@ -3,7 +3,6 @@
 import 'package:expenso/const/constants.dart';
 import 'package:expenso/old%20trash/dialog_utils.dart';
 import 'package:expenso/providers/categories_provider.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:provider/provider.dart';
@@ -12,7 +11,7 @@ import 'package:expenso/hives/expenses.dart';
 import 'package:expenso/hives/categories.dart';
 import 'package:expenso/providers/expense_provider.dart';
 import 'package:expenso/providers/incomes_provider.dart';
-import 'package:expenso/providers/category_data.dart';
+import 'package:expenso/old%20trash/category_data.dart';
 import 'package:expenso/screens/history_screen.dart';
 import 'package:expenso/dropdowns.dart';
 
@@ -99,12 +98,11 @@ class _OverviewScreenState extends State<OverviewScreen> {
                         : nameController.text;
 
                 Categories newCategory =
-                    Categories(name: categoryName, type: "consume");
+                    Categories(name: categoryName, type: selectedType);
 
                 // Add logic to save the new category to your data store
                 await categProvider.createCategory(newCategory);
-                await categProvider.printCategories();
-
+                // ignore: use_build_context_synchronously
                 Navigator.of(context).pop(); // Close the dialog
               },
               child: Text("Apply"),
@@ -122,14 +120,15 @@ class _OverviewScreenState extends State<OverviewScreen> {
 
     void showAddExpenseDialog(BuildContext context) async {
       List<Categories> categories = await categProvider.getCategories();
-      String selectedCategoryName = "";
       Categories selectedCategory = categories[0];
+      String selectedCategoryName = selectedCategory.name;
 
       Expenses newExp =
           Expenses(category: categories[0], amount: 0.0, date: DateTime.now());
       TextEditingController amountController = TextEditingController();
       TextEditingController dateController = TextEditingController();
       TextEditingController commentController = TextEditingController();
+      // ignore: use_build_context_synchronously
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
@@ -145,6 +144,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
                             category; // Update the selected category
                       });
                     },
+                    isExpense: true,
                   ),
                   GestureDetector(
                     child: Icon(
@@ -199,6 +199,104 @@ class _OverviewScreenState extends State<OverviewScreen> {
                 // Add the new Expense to database:
 
                 expensesProvider.createExpense(newExp);
+
+                // Close the dialog
+                Navigator.of(context).pop();
+              },
+              child: Text("Save"),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text("Cancel"),
+            ),
+          ],
+        ),
+      );
+    }
+
+    void showAddIncomeDialog(BuildContext context) async {
+      List<Categories> categories = await categProvider.getCategories();
+      String selectedCategoryName = "";
+      Categories selectedCategory = categories[0];
+
+      Incomes newInc =
+          Incomes(category: categories[0], amount: 0.0, date: DateTime.now());
+      TextEditingController amountController = TextEditingController();
+      TextEditingController dateController = TextEditingController();
+      TextEditingController commentController = TextEditingController();
+      // ignore: use_build_context_synchronously
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: Text("Add Income"),
+          content: Column(
+            children: [
+              Row(
+                children: [
+                  DropdownCategoryNames(
+                    onCategorySelected: (String category) {
+                      setState(() {
+                        selectedCategoryName =
+                            category; // Update the selected category
+                      });
+                    },
+                    isExpense: false,
+                  ),
+                  GestureDetector(
+                    child: Icon(
+                      Icons.add,
+                      color: Colors.white,
+                    ),
+                    onTap: () {
+                      // Trigger another dialog for adding categories
+                      showAddCategoryDialog(context);
+                    },
+                  )
+                ],
+              ),
+              TextField(
+                controller: amountController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(labelText: 'Amount'),
+              ),
+              TextField(
+                controller: dateController,
+                readOnly: true,
+                onTap: () async {
+                  DateTime? selectedDate = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now(),
+                    firstDate: DateTime(2000),
+                    lastDate: DateTime(2101),
+                  );
+                  if (selectedDate != null) {
+                    dateController.text = selectedDate.toLocal().toString();
+                  }
+                },
+                decoration: InputDecoration(labelText: 'Date'),
+              ),
+              TextField(
+                controller: commentController,
+                decoration: InputDecoration(labelText: 'Comment'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                // Update newExp with the entered values
+                selectedCategory =
+                    categProvider.getCategoryByName(selectedCategoryName);
+                newInc.category = selectedCategory;
+                newInc.amount = double.parse(amountController.text);
+                newInc.date = DateTime.parse(dateController.text);
+                newInc.comment = commentController.text;
+
+                // Add the new Expense to database:
+
+                incomesProvider.createIncome(newInc);
 
                 // Close the dialog
                 Navigator.of(context).pop();

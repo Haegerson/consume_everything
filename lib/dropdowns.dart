@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import 'package:expenso/const/constants.dart';
 import 'package:expenso/providers/categories_provider.dart';
 import 'package:flutter/material.dart';
@@ -7,13 +9,15 @@ import 'package:expenso/hives/expenses.dart';
 import 'package:expenso/hives/categories.dart';
 import 'package:expenso/providers/expense_provider.dart';
 import 'package:expenso/providers/incomes_provider.dart';
-import 'package:expenso/providers/category_data.dart';
+import 'package:expenso/old%20trash/category_data.dart';
 
 class DropdownCategoryNames extends StatefulWidget {
   final Function(String) onCategorySelected;
+  final bool isExpense;
   const DropdownCategoryNames({
     Key? key,
-    required this.onCategorySelected, // Callback for selected Category!
+    required this.onCategorySelected,
+    required this.isExpense,
   }) : super(key: key);
 
   @override
@@ -21,19 +25,21 @@ class DropdownCategoryNames extends StatefulWidget {
 }
 
 class _DropdownCategoryNamesState extends State<DropdownCategoryNames> {
-  late String dropDownValue;
+  late String? dropDownValue;
+  late Future<List<String>> categoryNamesFuture;
 
   @override
   void initState() {
     super.initState();
-    dropDownValue = ''; // Set initial value as needed
-    fetchCategoryNames(); // Trigger fetching category names
+    categoryNamesFuture =
+        fetchCategoryNames(); // Trigger fetching category names
+    dropDownValue = null;
   }
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<String>>(
-      future: fetchCategoryNames(),
+      future: categoryNamesFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return CircularProgressIndicator();
@@ -43,6 +49,8 @@ class _DropdownCategoryNamesState extends State<DropdownCategoryNames> {
           return Text('No categories available.');
         } else {
           List<String> categoryNames = snapshot.data!;
+          print("First category name is:" + categoryNames[0]);
+          print(dropDownValue);
 
           return DropdownButton<String>(
             value: dropDownValue,
@@ -56,8 +64,7 @@ class _DropdownCategoryNamesState extends State<DropdownCategoryNames> {
             onChanged: (String? newValue) {
               setState(() {
                 dropDownValue = newValue!;
-                widget
-                    .onCategorySelected(newValue!); // Notify the parent widget
+                widget.onCategorySelected(newValue);
               });
             },
           );
@@ -70,15 +77,22 @@ class _DropdownCategoryNamesState extends State<DropdownCategoryNames> {
     CategoriesProvider categProvider =
         Provider.of<CategoriesProvider>(context, listen: false);
     List<Categories> categories = await categProvider.getCategories();
-    List<String> categoryNames = categories
-        .where((element) =>
-            (element.type == CategoryType.consumption) ||
-            (element.type == CategoryType.savings))
-        .map((element) => element.name)
-        .toList();
+    List<String> categoryNames = widget.isExpense
+        ? categories
+            .where((element) =>
+                (element.type == CategoryType.consumption) ||
+                (element.type == CategoryType.savings))
+            .map((element) => element.name)
+            .toList()
+        : categories
+            .where((element) => element.type == CategoryType.income)
+            .map((element) => element.name)
+            .toList();
 
     // If dropDownValue is empty, set it to the first value in categoryNames
-    if (dropDownValue.isEmpty && categoryNames.isNotEmpty) {
+    print("category names defined in method...");
+    if (dropDownValue == null && categoryNames.isNotEmpty) {
+      print("now dropdown value is set");
       setState(() {
         dropDownValue = categoryNames.first;
       });
