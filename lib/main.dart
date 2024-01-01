@@ -53,6 +53,10 @@ class OverviewScreen extends StatefulWidget {
 }
 
 class _OverviewScreenState extends State<OverviewScreen> {
+  final GlobalKey<DropdownCategoryNamesState> _dropdownExpenseCategoryNamesKey =
+      GlobalKey();
+  final GlobalKey<DropdownCategoryNamesState> _dropdownIncomesCategoryNamesKey =
+      GlobalKey();
   @override
   Widget build(BuildContext context) {
     CategoriesProvider categProvider = Provider.of<CategoriesProvider>(context);
@@ -102,8 +106,16 @@ class _OverviewScreenState extends State<OverviewScreen> {
 
                 // Add logic to save the new category to your data store
                 await categProvider.createCategory(newCategory);
-                // ignore: use_build_context_synchronously
+                categProvider.printCategories();
+
                 Navigator.of(context).pop(); // Close the dialog
+                setState(() {
+                  // Trigger an update in the DropdownCategoryNames widget
+                  _dropdownExpenseCategoryNamesKey.currentState
+                      ?.updateCategories();
+                  _dropdownIncomesCategoryNamesKey.currentState
+                      ?.updateCategories();
+                });
               },
               child: Text("Apply"),
             ),
@@ -138,6 +150,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
               Row(
                 children: [
                   DropdownCategoryNames(
+                    key: _dropdownExpenseCategoryNamesKey,
                     onCategorySelected: (String category) {
                       setState(() {
                         selectedCategoryName =
@@ -218,8 +231,8 @@ class _OverviewScreenState extends State<OverviewScreen> {
 
     void showAddIncomeDialog(BuildContext context) async {
       List<Categories> categories = await categProvider.getCategories();
-      String selectedCategoryName = "";
       Categories selectedCategory = categories[0];
+      String selectedCategoryName = selectedCategory.name;
 
       Incomes newInc =
           Incomes(category: categories[0], amount: 0.0, date: DateTime.now());
@@ -236,6 +249,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
               Row(
                 children: [
                   DropdownCategoryNames(
+                    key: _dropdownIncomesCategoryNamesKey,
                     onCategorySelected: (String category) {
                       setState(() {
                         selectedCategoryName =
@@ -403,11 +417,8 @@ class _OverviewScreenState extends State<OverviewScreen> {
           ),
           FloatingActionButton(
             heroTag: "addIncome",
-            onPressed: () async {
-              DialogUtils.showAddIncomeDialog(
-                  context, incomesProvider, categProvider, () {
-                setState(() {});
-              });
+            onPressed: () {
+              showAddIncomeDialog(context);
             },
             tooltip: 'Add Income',
             child: const Text("Inc"),

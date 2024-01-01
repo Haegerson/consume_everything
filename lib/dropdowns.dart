@@ -21,10 +21,18 @@ class DropdownCategoryNames extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<DropdownCategoryNames> createState() => _DropdownCategoryNamesState();
+  State<DropdownCategoryNames> createState() => DropdownCategoryNamesState();
 }
 
-class _DropdownCategoryNamesState extends State<DropdownCategoryNames> {
+class DropdownCategoryNamesState extends State<DropdownCategoryNames> {
+  void updateCategories() {
+    setState(() {
+      // Perform any logic needed to update the dropdown values
+      // For example, you can fetch the categories again.
+      categoryNamesFuture = fetchCategoryNames();
+    });
+  }
+
   late String? dropDownValue;
   late Future<List<String>> categoryNamesFuture;
 
