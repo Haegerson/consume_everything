@@ -1,7 +1,6 @@
 // ignore_for_file: prefer_const_constructors, avoid_print, prefer_const_constructors_in_immutables
 
 import 'package:expenso/const/constants.dart';
-import 'package:expenso/old%20trash/dialog_utils.dart';
 import 'package:expenso/providers/categories_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/adapters.dart';
@@ -11,8 +10,8 @@ import 'package:expenso/hives/expenses.dart';
 import 'package:expenso/hives/categories.dart';
 import 'package:expenso/providers/expense_provider.dart';
 import 'package:expenso/providers/incomes_provider.dart';
-import 'package:expenso/old%20trash/category_data.dart';
 import 'package:expenso/screens/history_screen.dart';
+import 'package:expenso/screens/manage_categories_screen.dart';
 import 'package:expenso/dropdowns.dart';
 
 void main() async {
@@ -364,7 +363,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => ManageCategoriesSreen()),
+                          builder: (context) => ManageCategoriesScreen()),
                     );
                   },
                   child: Container(
