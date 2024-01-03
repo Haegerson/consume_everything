@@ -65,6 +65,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
 
     void showAddCategoryDialog(BuildContext context) {
       TextEditingController nameController = TextEditingController();
+      TextEditingController alertThresholdController = TextEditingController();
       String selectedType = CategoryType.consumption;
 
       showDialog(
@@ -91,6 +92,11 @@ class _OverviewScreenState extends State<OverviewScreen> {
                 controller: nameController,
                 decoration: InputDecoration(labelText: 'Enter category name'),
               ),
+              Text("Threshold for alert"),
+              TextField(
+                controller: alertThresholdController,
+                decoration: InputDecoration(labelText: 'Enter threshold'),
+              )
             ],
           ),
           actions: [
@@ -100,9 +106,13 @@ class _OverviewScreenState extends State<OverviewScreen> {
                     (nameController.text.isEmpty)
                         ? "Untitled"
                         : nameController.text;
+                final double? alertThreshold =
+                    double.parse(alertThresholdController.text);
 
-                Categories newCategory =
-                    Categories(name: categoryName, type: selectedType);
+                Categories newCategory = Categories(
+                    name: categoryName,
+                    type: selectedType,
+                    alertThreshold: alertThreshold);
 
                 // Add logic to save the new category to your data store
                 await categProvider.createCategory(newCategory);
@@ -328,7 +338,8 @@ class _OverviewScreenState extends State<OverviewScreen> {
       );
     }
 
-    Categories cat = Categories(name: "test", type: CategoryType.consumption);
+    Categories cat = Categories(
+        name: "test", type: CategoryType.consumption, alertThreshold: null);
     // List<Categories> categories = [];
     Expenses exp = Expenses(
       category: cat,
@@ -347,18 +358,35 @@ class _OverviewScreenState extends State<OverviewScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: <Widget>[
               Expanded(
-                  child: GestureDetector(
-                child: Container(
-                  margin: EdgeInsets.all(5),
-                  color: Colors.red,
+                child: GestureDetector(
+                  onTap: () {
+                    // Navigate to another screen when tapped
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => ManageCategoriesSreen()),
+                    );
+                  },
+                  child: Container(
+                    margin: EdgeInsets.all(5),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.white), // Outline color
+                      borderRadius: BorderRadius.circular(
+                          10), // Optional: for rounded corners
+                    ),
+                    child: Center(
+                      child: Text(
+                        'Categories',
+                        style: TextStyle(
+                          color: Colors.white, // Text color
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-                onTap: () async {
-                  // categories = await categProvider.getCategories();
-                  await categProvider.createCategory(cat);
-                  await expensesProvider.createExpense(exp);
-                  setState(() {});
-                },
-              )),
+              ),
               Expanded(
                   child: GestureDetector(
                 child: Container(

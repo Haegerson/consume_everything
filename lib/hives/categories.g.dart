@@ -19,17 +19,20 @@ class CategoriesAdapter extends TypeAdapter<Categories> {
     return Categories(
       name: fields[0] as String,
       type: fields[1] as String,
+      alertThreshold: fields[2] as double?,
     );
   }
 
   @override
   void write(BinaryWriter writer, Categories obj) {
     writer
-      ..writeByte(2)
+      ..writeByte(3)
       ..writeByte(0)
       ..write(obj.name)
       ..writeByte(1)
-      ..write(obj.type);
+      ..write(obj.type)
+      ..writeByte(2)
+      ..write(obj.alertThreshold);
   }
 
   @override

@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/adapters.dart';
 part "categories.g.dart";
@@ -7,6 +9,7 @@ class Categories extends HiveObject {
   Categories({
     required this.name,
     required this.type,
+    required this.alertThreshold,
   });
 
   @HiveField(0)
@@ -14,6 +17,9 @@ class Categories extends HiveObject {
 
   @HiveField(1)
   String type;
+
+  @HiveField(2)
+  double? alertThreshold;
 
   @override
   bool operator ==(Object other) {
