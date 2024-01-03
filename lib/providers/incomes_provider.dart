@@ -17,11 +17,11 @@ class IncomesProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Get test Incomes
-  Future<void> getIncomes() async {
+  // Get list of all Incomes
+  Future<List<Incomes>> getIncomes() async {
     Box<Incomes> box = await Hive.openBox<Incomes>(incomesHiveBox);
     _incomes = box.values.toList();
-    notifyListeners();
+    return _incomes;
   }
 
   // remove a test expense

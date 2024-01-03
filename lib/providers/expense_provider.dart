@@ -18,7 +18,7 @@ class ExpensesProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Get test Expenses
+  // Get list of all Expenses
   Future<List<Expenses>> getExpenses() async {
     Box<Expenses> box = await Hive.openBox<Expenses>(expensesHiveBox);
     _expenses = box.values.toList();
