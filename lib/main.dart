@@ -2,6 +2,7 @@
 
 import 'package:expenso/const/constants.dart';
 import 'package:expenso/providers/categories_provider.dart';
+import 'package:expenso/screens/statistics_overview_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:provider/provider.dart';
@@ -387,17 +388,35 @@ class _OverviewScreenState extends State<OverviewScreen> {
                 ),
               ),
               Expanded(
-                  child: GestureDetector(
-                child: Container(
-                  margin: EdgeInsets.all(5),
-                  color: Colors.lightGreen, // DELETE CATEGORIES
+                child: GestureDetector(
+                  onTap: () {
+                    // Navigate to another screen when tapped
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => StatisticsOverviewScreen()),
+                    );
+                  },
+                  child: Container(
+                    margin: EdgeInsets.all(5),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.white), // Outline color
+                      borderRadius: BorderRadius.circular(
+                          10), // Optional: for rounded corners
+                    ),
+                    child: Center(
+                      child: Text(
+                        'Statistics',
+                        style: TextStyle(
+                          color: Colors.white, // Text color
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-                onTap: () async {
-                  // categories = await categProvider.getCategories();
-                  await categProvider.deleteAllCategories();
-                  setState(() {});
-                },
-              )),
+              ),
               Expanded(
                 child: GestureDetector(
                   onTap: () {
