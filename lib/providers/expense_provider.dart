@@ -25,6 +25,24 @@ class ExpensesProvider extends ChangeNotifier {
     return _expenses;
   }
 
+// New method to get monthly expenses
+  Future<Map<String, double>> getMonthlyExpenses() async {
+    List<Expenses> expenses = await getExpenses();
+    Map<String, double> monthlyExpenses = {};
+
+    for (Expenses expense in expenses) {
+      String monthYear = '${expense.date.month}-${expense.date.year}';
+      if (monthlyExpenses.containsKey(monthYear)) {
+        monthlyExpenses[monthYear] =
+            monthlyExpenses[monthYear]! + expense.amount;
+      } else {
+        monthlyExpenses[monthYear] = expense.amount;
+      }
+    }
+
+    return monthlyExpenses;
+  }
+
   // remove a test expense
   Future<void> deleteExpense(Expenses exp) async {
     Box<Expenses> box = await Hive.openBox<Expenses>(expensesHiveBox);
