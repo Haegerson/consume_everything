@@ -26,20 +26,28 @@ class ExpensesProvider extends ChangeNotifier {
   }
 
 // New method to get monthly expenses
-  Future<Map<String, double>> getMonthlyExpenses() async {
+  Future<Map<String, double>> getMonthlyExpenses(int year) async {
     List<Expenses> expenses = await getExpenses();
     Map<String, double> monthlyExpenses = {};
 
-    for (Expenses expense in expenses) {
-      String monthYear = '${expense.date.month}-${expense.date.year}';
-      if (monthlyExpenses.containsKey(monthYear)) {
-        monthlyExpenses[monthYear] =
-            monthlyExpenses[monthYear]! + expense.amount;
-      } else {
-        monthlyExpenses[monthYear] = expense.amount;
-      }
+    // Initialize monthlyExpenses with all months set to zero
+    for (int month = 1; month <= 12; month++) {
+      monthlyExpenses[month.toString()] = 0.0;
     }
 
+    // Filter expenses for the specified year
+    List<Expenses> filteredExpenses =
+        expenses.where((expense) => expense.date.year == year).toList();
+
+    // Update the amount list
+    for (Expenses expense in filteredExpenses) {
+      String month = '${expense.date.month}';
+      if (monthlyExpenses.containsKey(month)) {
+        monthlyExpenses[month] = monthlyExpenses[month]! + expense.amount;
+      } else {
+        monthlyExpenses[month] = expense.amount;
+      }
+    }
     return monthlyExpenses;
   }
 
