@@ -1,43 +1,82 @@
+import 'package:expenso/const/constants.dart';
+import 'package:expenso/providers/incomes_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:expenso/providers/expense_provider.dart';
 
-class FlowChartScreen extends StatefulWidget {
-  const FlowChartScreen({super.key});
+class LineChartScreen extends StatefulWidget {
+  const LineChartScreen({super.key});
 
   @override
-  State<FlowChartScreen> createState() => _FlowChartScreenState();
+  State<LineChartScreen> createState() => _LineChartScreenState();
 }
 
-class _FlowChartScreenState extends State<FlowChartScreen> {
+class _LineChartScreenState extends State<LineChartScreen> {
   final ExpensesProvider _expensesProvider = ExpensesProvider();
-  late Future<Map<String, double>> _monthlyExpenses;
+  final IncomesProvider _incomesProvider = IncomesProvider();
+  late Future<Map<String, double>> _monthlyConsumeExpenses;
+  late Future<Map<String, double>> _monthlySavingsExpenses;
+  late Future<Map<String, double>> _monthlyIncomes;
   late int selectedYear;
 
-  final Gradient gradient = LinearGradient(colors: [Colors.blue, Colors.red]);
+  final Gradient consumeExpenseGradient = const LinearGradient(
+      colors: [Colors.redAccent, Color.fromARGB(255, 105, 10, 3)]);
+  final Gradient savingsExpenseGradient = const LinearGradient(colors: [
+    Color.fromARGB(255, 59, 132, 235),
+    Color.fromARGB(255, 125, 200, 238)
+  ]);
+  final Gradient incomeGradient = const LinearGradient(
+      colors: [Color.fromARGB(255, 5, 230, 76), Color.fromARGB(255, 2, 60, 7)]);
 
   @override
   void initState() {
     super.initState();
     selectedYear = DateTime.now().year.toInt();
-    _monthlyExpenses = _expensesProvider.getMonthlyExpenses(selectedYear);
+    _monthlyConsumeExpenses = _expensesProvider.getMonthlyExpenses(
+        selectedYear, CategoryType.consumption);
+    _monthlySavingsExpenses = _expensesProvider.getMonthlyExpenses(
+        selectedYear, CategoryType.savings);
+    _monthlyIncomes = _incomesProvider.getMonthlyIncomes(selectedYear);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: FutureBuilder(
-        future: _monthlyExpenses,
+        future: Future.wait([
+          _monthlyConsumeExpenses,
+          _monthlySavingsExpenses,
+          _monthlyIncomes
+        ]), // Use Future.wait to wait for both futures
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return CircularProgressIndicator();
+            return const CircularProgressIndicator();
           } else if (snapshot.hasError) {
             return Text('Error: ${snapshot.error}');
           } else {
-            Map<String, double> monthlyExpenses =
-                snapshot.data as Map<String, double>;
-            List<FlSpot> expenseSpotList = monthlyExpenses.entries
+            Map<String, double> monthlyConsumeExpenses =
+                (snapshot.data as List<dynamic>)[0] as Map<String, double>;
+            Map<String, double> monthlySavingsExpenses =
+                (snapshot.data as List<dynamic>)[1] as Map<String, double>;
+            Map<String, double> monthlyIncomes =
+                (snapshot.data as List<dynamic>)[2] as Map<String, double>;
+
+            List<FlSpot> consumeExpenseSpotList = monthlyConsumeExpenses.entries
+                .map((entry) => FlSpot(
+                      convertMonthToDouble(
+                          entry.key), // assuming 'month' format
+                      entry.value,
+                    ))
+                .toList();
+            List<FlSpot> savingsExpenseSpotList = monthlySavingsExpenses.entries
+                .map((entry) => FlSpot(
+                      convertMonthToDouble(
+                          entry.key), // assuming 'month' format
+                      entry.value,
+                    ))
+                .toList();
+            List<FlSpot> incomeSpotList = monthlyIncomes.entries
                 .map((entry) => FlSpot(
                       convertMonthToDouble(
                           entry.key), // assuming 'month' format
@@ -64,8 +103,14 @@ class _FlowChartScreenState extends State<FlowChartScreen> {
                         if (value != null) {
                           setState(() {
                             selectedYear = value;
-                            _monthlyExpenses = _expensesProvider
-                                .getMonthlyExpenses(selectedYear);
+                            _monthlyConsumeExpenses =
+                                _expensesProvider.getMonthlyExpenses(
+                                    selectedYear, CategoryType.consumption);
+                            _monthlySavingsExpenses =
+                                _expensesProvider.getMonthlyExpenses(
+                                    selectedYear, CategoryType.savings);
+                            _monthlyIncomes = _incomesProvider
+                                .getMonthlyIncomes(selectedYear);
                           });
                         }
                       },
@@ -80,12 +125,25 @@ class _FlowChartScreenState extends State<FlowChartScreen> {
                       maxX: 12,
                       lineBarsData: [
                         LineChartBarData(
-                          spots: expenseSpotList,
+                          spots: consumeExpenseSpotList,
                           isCurved: false,
-                          color: Colors.blue,
                           dotData: const FlDotData(show: true),
                           belowBarData: BarAreaData(show: false),
-                          gradient: gradient,
+                          gradient: consumeExpenseGradient,
+                        ),
+                        LineChartBarData(
+                          spots: savingsExpenseSpotList,
+                          isCurved: false,
+                          dotData: const FlDotData(show: true),
+                          belowBarData: BarAreaData(show: false),
+                          gradient: savingsExpenseGradient,
+                        ),
+                        LineChartBarData(
+                          spots: incomeSpotList,
+                          isCurved: false,
+                          dotData: const FlDotData(show: true),
+                          belowBarData: BarAreaData(show: false),
+                          gradient: incomeGradient,
                         ),
                       ],
                       titlesData: LineTitles.getTitleData(),

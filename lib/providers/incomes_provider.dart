@@ -24,11 +24,37 @@ class IncomesProvider extends ChangeNotifier {
     return _incomes;
   }
 
-  // remove a test expense
+  // remove a n income
   Future<void> deleteIncome(Incomes inc) async {
     Box<Incomes> box = await Hive.openBox<Incomes>(incomesHiveBox);
     await box.delete(inc.key);
     _incomes = box.values.toList();
     notifyListeners();
+  }
+
+  // Get monthly expenses
+  Future<Map<String, double>> getMonthlyIncomes(int year) async {
+    List<Incomes> incomes = await getIncomes();
+    Map<String, double> monthlyIncomes = {};
+
+    // Initialize monthlyExpenses with all months set to zero
+    for (int month = 1; month <= 12; month++) {
+      monthlyIncomes[month.toString()] = 0.0;
+    }
+
+    // Filter expenses for the specified year
+    List<Incomes> filteredIncomes =
+        incomes.where((income) => income.date.year == year).toList();
+
+    // Update the amount list
+    for (Incomes income in filteredIncomes) {
+      String month = '${income.date.month}';
+      if (monthlyIncomes.containsKey(month)) {
+        monthlyIncomes[month] = monthlyIncomes[month]! + income.amount;
+      } else {
+        monthlyIncomes[month] = income.amount;
+      }
+    }
+    return monthlyIncomes;
   }
 }

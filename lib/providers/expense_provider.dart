@@ -1,3 +1,4 @@
+import 'package:expenso/const/constants.dart';
 import 'package:expenso/hives/expenses.dart';
 import 'package:hive/hive.dart';
 import 'package:flutter/foundation.dart';
@@ -25,8 +26,8 @@ class ExpensesProvider extends ChangeNotifier {
     return _expenses;
   }
 
-// New method to get monthly expenses
-  Future<Map<String, double>> getMonthlyExpenses(int year) async {
+// Get monthly expenses
+  Future<Map<String, double>> getMonthlyExpenses(int year, String type) async {
     List<Expenses> expenses = await getExpenses();
     Map<String, double> monthlyExpenses = {};
 
@@ -36,8 +37,10 @@ class ExpensesProvider extends ChangeNotifier {
     }
 
     // Filter expenses for the specified year
-    List<Expenses> filteredExpenses =
-        expenses.where((expense) => expense.date.year == year).toList();
+    List<Expenses> filteredExpenses = expenses
+        .where((expense) =>
+            (expense.date.year == year) && (expense.category.type == type))
+        .toList();
 
     // Update the amount list
     for (Expenses expense in filteredExpenses) {
@@ -51,7 +54,7 @@ class ExpensesProvider extends ChangeNotifier {
     return monthlyExpenses;
   }
 
-  // remove a test expense
+  // remove an expense
   Future<void> deleteExpense(Expenses exp) async {
     Box<Expenses> box = await Hive.openBox<Expenses>(expensesHiveBox);
     await box.delete(exp.key);
