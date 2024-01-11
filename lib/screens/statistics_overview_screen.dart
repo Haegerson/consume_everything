@@ -1,4 +1,5 @@
 import 'package:expenso/screens/statistics_screens/linechart_screen.dart';
+import 'package:expenso/screens/statistics_screens/piechart_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -29,7 +30,13 @@ class _StatisticsOverviewScreenState extends State<StatisticsOverviewScreen> {
                     builder: (context) => const LineChartScreen()),
               );
             }),
-            _buildContainer('Container 2', () {}),
+            _buildContainer('Chart', () {
+              // Navigate to FlowChartScreen when the first container is clicked
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const PieChartScreen()),
+              );
+            }),
             _buildContainer('Container 3', () {}),
           ],
         ),

@@ -48,7 +48,7 @@ class _LineChartScreenState extends State<LineChartScreen> {
           _monthlyConsumeExpenses,
           _monthlySavingsExpenses,
           _monthlyIncomes
-        ]), // Use Future.wait to wait for both futures
+        ]), // Use Future.wait to wait for all futures
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const CircularProgressIndicator();
@@ -71,15 +71,13 @@ class _LineChartScreenState extends State<LineChartScreen> {
                 .toList();
             List<FlSpot> savingsExpenseSpotList = monthlySavingsExpenses.entries
                 .map((entry) => FlSpot(
-                      convertMonthToDouble(
-                          entry.key), // assuming 'month' format
+                      convertMonthToDouble(entry.key),
                       entry.value,
                     ))
                 .toList();
             List<FlSpot> incomeSpotList = monthlyIncomes.entries
                 .map((entry) => FlSpot(
-                      convertMonthToDouble(
-                          entry.key), // assuming 'month' format
+                      convertMonthToDouble(entry.key),
                       entry.value,
                     ))
                 .toList();
