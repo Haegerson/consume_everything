@@ -25,12 +25,12 @@ class _HistoryScreenState extends State<HistoryScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Expense History'),
+        title: const Text('Expense History'),
         bottom: TabBar(
           controller: _tabController,
           tabs: [
-            Tab(text: 'Expenses'),
-            Tab(text: 'Incomes'),
+            const Tab(text: 'Expenses'),
+            const Tab(text: 'Incomes'),
           ],
         ),
       ),
@@ -43,7 +43,7 @@ class _HistoryScreenState extends State<HistoryScreen>
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   // If the Future is still running, show a loading indicator
-                  return CircularProgressIndicator();
+                  return const CircularProgressIndicator();
                 } else if (snapshot.hasError) {
                   // If the Future completed with an error, show an error message
                   return Text('Error: ${snapshot.error}');
@@ -69,7 +69,7 @@ class _HistoryScreenState extends State<HistoryScreen>
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   // If the Future is still running, show a loading indicator
-                  return CircularProgressIndicator();
+                  return const CircularProgressIndicator();
                 } else if (snapshot.hasError) {
                   // If the Future completed with an error, show an error message
                   return Text('Error: ${snapshot.error}');
@@ -104,8 +104,8 @@ class ExpenseTile extends StatelessWidget {
       background: Container(
         color: Colors.red, // Set the background color when swiping
         alignment: Alignment.centerRight,
-        padding: EdgeInsets.only(right: 16.0),
-        child: Icon(
+        padding: const EdgeInsets.only(right: 16.0),
+        child: const Icon(
           Icons.delete,
           color: Colors.white,
         ),
@@ -140,8 +140,8 @@ class IncomeTile extends StatelessWidget {
       background: Container(
         color: Colors.red, // Set the background color when swiping
         alignment: Alignment.centerRight,
-        padding: EdgeInsets.only(right: 16.0),
-        child: Icon(
+        padding: const EdgeInsets.only(right: 16.0),
+        child: const Icon(
           Icons.delete,
           color: Colors.white,
         ),
