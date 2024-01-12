@@ -1,3 +1,4 @@
+import 'package:expenso/screens/statistics_screens/barchart_screen.dart';
 import 'package:expenso/screens/statistics_screens/linechart_screen.dart';
 import 'package:expenso/screens/statistics_screens/piechart_screen.dart';
 import 'package:flutter/material.dart';
@@ -22,7 +23,7 @@ class _StatisticsOverviewScreenState extends State<StatisticsOverviewScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _buildContainer('Chart', () {
+            _buildContainer('LineChart', () {
               // Navigate to FlowChartScreen when the first container is clicked
               Navigator.push(
                 context,
@@ -30,14 +31,20 @@ class _StatisticsOverviewScreenState extends State<StatisticsOverviewScreen> {
                     builder: (context) => const LineChartScreen()),
               );
             }),
-            _buildContainer('Chart', () {
+            _buildContainer('PieChart', () {
               // Navigate to FlowChartScreen when the first container is clicked
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const PieChartScreen()),
               );
             }),
-            _buildContainer('Container 3', () {}),
+            _buildContainer('BarChart', () {
+              // Navigate to FlowChartScreen when the first container is clicked
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const BarChartScreen()),
+              );
+            }),
           ],
         ),
       ),

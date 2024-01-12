@@ -3,6 +3,8 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:expenso/providers/expense_provider.dart';
+import 'package:expenso/dropdowns.dart';
+// https://www.youtube.com/watch?v=rZx_isqXrhg for touch effects
 
 class PieChartScreen extends StatefulWidget {
   const PieChartScreen({super.key});
@@ -35,59 +37,6 @@ class _PieChartScreenState extends State<PieChartScreen> {
 
   @override
   Widget build(BuildContext context) {
-    List<DropdownMenuItem<int>> _generateYearDropdownItems() {
-      int currentYear = DateTime.now().year;
-      List<DropdownMenuItem<int>> items = [];
-
-      for (int year = currentYear; year >= 2020; year--) {
-        items.add(DropdownMenuItem<int>(
-          value: year,
-          child: Text(year.toString()),
-        ));
-      }
-
-      return items;
-    }
-
-    List<DropdownMenuItem<int>> _generateMonthDropdownItems() {
-      List<DropdownMenuItem<int>> items = [];
-
-      for (int month = 1; month <= 12; month++) {
-        items.add(DropdownMenuItem<int>(
-          value: month,
-          child: Text(month.toString()),
-        ));
-      }
-
-      return items;
-    }
-
-    Widget _buildYearDropdown(
-        String label, int value, Function(int?) onChanged) {
-      return Container(
-        padding: const EdgeInsets.all(8.0),
-        child: DropdownButton<int>(
-          value: value,
-          items: _generateYearDropdownItems(),
-          onChanged: onChanged,
-          hint: Text(label),
-        ),
-      );
-    }
-
-    Widget _buildMonthDropdown(
-        String label, int value, void Function(int?) onChanged) {
-      return Container(
-        padding: EdgeInsets.all(8.0),
-        child: DropdownButton<int>(
-          value: value,
-          items: _generateMonthDropdownItems(),
-          onChanged: onChanged,
-          hint: Text(label),
-        ),
-      );
-    }
-
     void _refreshChart() {
       setState(() {
         _categoryData = _expensesProvider.calculateCategoryPercentagesBetween(
@@ -113,7 +62,7 @@ class _PieChartScreenState extends State<PieChartScreen> {
 
               return Column(
                 children: [
-                  _buildYearDropdown("Start Year", selectedStartYear,
+                  buildYearDropdown("Start Year", selectedStartYear,
                       (int? value) {
                     setState(() {
                       if (value != null) {
@@ -121,7 +70,7 @@ class _PieChartScreenState extends State<PieChartScreen> {
                       }
                     });
                   }),
-                  _buildMonthDropdown("Start Month", selectedStartMonth,
+                  buildMonthDropdown("Start Month", selectedStartMonth,
                       (int? value) {
                     if (value != null) {
                       setState(() {
@@ -129,14 +78,14 @@ class _PieChartScreenState extends State<PieChartScreen> {
                       });
                     }
                   }),
-                  _buildYearDropdown("End Year", selectedEndYear, (int? value) {
+                  buildYearDropdown("End Year", selectedEndYear, (int? value) {
                     if (value != null) {
                       setState(() {
                         selectedEndYear = value;
                       });
                     }
                   }),
-                  _buildMonthDropdown("End Month", selectedEndMonth,
+                  buildMonthDropdown("End Month", selectedEndMonth,
                       (int? value) {
                     if (value != null) {
                       setState(() {

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:expenso/providers/expense_provider.dart';
+import 'package:expenso/dropdowns.dart';
 
 class LineChartScreen extends StatefulWidget {
   const LineChartScreen({super.key});
@@ -88,16 +89,10 @@ class _LineChartScreenState extends State<LineChartScreen> {
                   flex: 1,
                   child: Container(
                     margin: EdgeInsets.all(10.0),
-                    child: DropdownButton<int>(
-                      value: selectedYear,
-                      items: List.generate(
-                        DateTime.now().year - 2019,
-                        (index) => DropdownMenuItem<int>(
-                          value: 2020 + index,
-                          child: Text((2020 + index).toString()),
-                        ),
-                      ),
-                      onChanged: (int? value) {
+                    child: buildYearDropdown(
+                      "Year",
+                      selectedYear,
+                      (int? value) {
                         if (value != null) {
                           setState(() {
                             selectedYear = value;

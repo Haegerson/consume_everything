@@ -148,3 +148,55 @@ class _DropdownCategoryTypesState extends State<DropdownCategoryTypes> {
     );
   }
 }
+
+List<DropdownMenuItem<int>> generateYearDropdownItems() {
+  int currentYear = DateTime.now().year;
+  List<DropdownMenuItem<int>> items = [];
+
+  for (int year = currentYear; year >= 2020; year--) {
+    items.add(DropdownMenuItem<int>(
+      value: year,
+      child: Text(year.toString()),
+    ));
+  }
+
+  return items;
+}
+
+List<DropdownMenuItem<int>> generateMonthDropdownItems() {
+  List<DropdownMenuItem<int>> items = [];
+
+  for (int month = 1; month <= 12; month++) {
+    items.add(DropdownMenuItem<int>(
+      value: month,
+      child: Text(month.toString()),
+    ));
+  }
+
+  return items;
+}
+
+Widget buildMonthDropdown(
+    String label, int value, void Function(int?) onChanged) {
+  return Container(
+    padding: EdgeInsets.all(8.0),
+    child: DropdownButton<int>(
+      value: value,
+      items: generateMonthDropdownItems(),
+      onChanged: onChanged,
+      hint: Text(label),
+    ),
+  );
+}
+
+Widget buildYearDropdown(String label, int value, Function(int?) onChanged) {
+  return Container(
+    padding: const EdgeInsets.all(8.0),
+    child: DropdownButton<int>(
+      value: value,
+      items: generateYearDropdownItems(),
+      onChanged: onChanged,
+      hint: Text(label),
+    ),
+  );
+}
