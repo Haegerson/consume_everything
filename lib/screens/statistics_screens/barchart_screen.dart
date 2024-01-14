@@ -66,12 +66,76 @@ class _BarChartScreenState extends State<BarChartScreen> {
                     child: Text("Calculate!"),
                   ),
                   Expanded(
-                    child: Placeholder(),
-                  )
+                    child: BarChart(
+                      BarChartData(
+                        groupsSpace: 20,
+                        titlesData: FlTitlesData(
+                          leftTitles: AxisTitles(
+                            sideTitles: SideTitles(showTitles: true),
+                          ),
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              //rotateAngle: 45,
+                              getTitlesWidget: (value, meta) {
+                                return getCategoryName(
+                                    value.toInt(), categoryData);
+                              },
+                            ),
+                          ),
+                        ),
+                        borderData: FlBorderData(
+                          show: true,
+                          border: Border.all(color: Colors.black, width: 1),
+                        ),
+                        barGroups: createBarGroups(categoryData),
+                      ),
+                    ),
+                  ),
                 ],
               );
             }
           }),
     );
+  }
+
+  List<BarChartGroupData> createBarGroups(
+      Map<String, Map<String, dynamic>> categoryData) {
+    List<BarChartGroupData> barGroups = [];
+    List<String> categories = getCategoryNames(categoryData);
+    int i = 0;
+
+    for (String category in categoryData.keys) {
+      double value = categoryData[category]!['absoluteValue'];
+      barGroups.add(
+        BarChartGroupData(
+          x: i,
+          barRods: [
+            BarChartRodData(
+              toY: value,
+              color: colorArray[i % colorArray.length],
+              width: 30,
+            ),
+          ],
+        ),
+      );
+      i++;
+    }
+
+    return barGroups;
+  }
+
+  Widget getCategoryName(
+      int index, Map<String, Map<String, dynamic>> categoryData) {
+    List<String> categories = getCategoryNames(categoryData);
+    return Text(
+      categories[index],
+      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+    );
+  }
+
+  List<String> getCategoryNames(
+      Map<String, Map<String, dynamic>> categoryData) {
+    return categoryData.keys.toList();
   }
 }
