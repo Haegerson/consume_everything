@@ -1,5 +1,3 @@
-import 'dart:ffi';
-
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/adapters.dart';
 part "categories.g.dart";

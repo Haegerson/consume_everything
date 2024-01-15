@@ -70,8 +70,9 @@ class ExpensesProvider extends ChangeNotifier {
     // filter the list
     List<Expenses> filteredExpenses = expenses
         .where((expense) =>
-            expense.date.isAtSameMomentAs(DateTime(startYear, startMonth)) ||
-            expense.date.isAtSameMomentAs(DateTime(endYear, endMonth)) ||
+            ((expense.date.year == startYear &&
+                expense.date.month == startMonth)) ||
+            (expense.date.year == endYear && expense.date.month == endMonth) ||
             expense.date.isAfter(DateTime(startYear, startMonth)) &&
                 expense.date.isBefore(DateTime(endYear, endMonth)))
         .toList();

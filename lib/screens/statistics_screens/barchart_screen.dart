@@ -35,6 +35,7 @@ class _BarChartScreenState extends State<BarChartScreen> {
         _categoryData = _expensesProvider.calculateCategoryPercentagesBetween(
             selectedYear, selectedMonth, selectedYear, selectedMonth);
       });
+      print(_categoryData);
     }
 
     return Scaffold(
@@ -59,6 +60,14 @@ class _BarChartScreenState extends State<BarChartScreen> {
                       }
                     });
                   }),
+                  buildMonthDropdown("Start Month", selectedMonth,
+                      (int? value) {
+                    setState(() {
+                      if (value != null) {
+                        selectedMonth = value;
+                      }
+                    });
+                  }),
                   ElevatedButton(
                     onPressed: () {
                       _refreshChart();
@@ -66,29 +75,53 @@ class _BarChartScreenState extends State<BarChartScreen> {
                     child: Text("Calculate!"),
                   ),
                   Expanded(
-                    child: BarChart(
-                      BarChartData(
-                        groupsSpace: 20,
-                        titlesData: FlTitlesData(
-                          leftTitles: AxisTitles(
-                            sideTitles: SideTitles(showTitles: true),
-                          ),
-                          bottomTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              //rotateAngle: 45,
-                              getTitlesWidget: (value, meta) {
-                                return getCategoryName(
-                                    value.toInt(), categoryData);
-                              },
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: BarChart(
+                        BarChartData(
+                          groupsSpace: 10,
+                          titlesData: FlTitlesData(
+                            topTitles: const AxisTitles(
+                              sideTitles: SideTitles(showTitles: false),
+                            ),
+                            rightTitles: const AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: false,
+                              ),
+                            ),
+                            bottomTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                getTitlesWidget: (value, meta) {
+                                  return getCategoryName(
+                                      value.toInt(), categoryData);
+                                },
+                              ),
                             ),
                           ),
+                          borderData: FlBorderData(
+                            show: true,
+                            border: Border.all(color: Colors.grey, width: 1),
+                          ),
+                          barGroups: createBarGroups(categoryData),
+                          extraLinesData: ExtraLinesData(
+                            horizontalLines: [
+                              HorizontalLine(
+                                y: 10, // Set your threshold value
+                                color: Colors.red, // Color of the line
+                                strokeWidth: 2, // Width of the line
+                                dashArray: [5, 5], // Optional dash pattern
+                              ),
+                              HorizontalLine(
+                                y: 20, // Set another threshold value
+                                color: Colors.blue, // Color of the line
+                                strokeWidth: 2, // Width of the line
+                                dashArray: [5, 5], // Optional dash pattern
+                              ),
+                              // Add more lines as needed
+                            ],
+                          ),
                         ),
-                        borderData: FlBorderData(
-                          show: true,
-                          border: Border.all(color: Colors.black, width: 1),
-                        ),
-                        barGroups: createBarGroups(categoryData),
                       ),
                     ),
                   ),
@@ -102,7 +135,6 @@ class _BarChartScreenState extends State<BarChartScreen> {
   List<BarChartGroupData> createBarGroups(
       Map<String, Map<String, dynamic>> categoryData) {
     List<BarChartGroupData> barGroups = [];
-    List<String> categories = getCategoryNames(categoryData);
     int i = 0;
 
     for (String category in categoryData.keys) {
