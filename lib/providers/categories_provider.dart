@@ -1,4 +1,6 @@
+import 'package:expenso/const/constants.dart';
 import 'package:expenso/hives/categories.dart';
+import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:collection';
@@ -72,5 +74,19 @@ class CategoriesProvider extends ChangeNotifier {
     }
 
     return categoryThresholds;
+  }
+
+  Future<Map<String, Color>> generateCategoryColors() async {
+    Box<Categories> box = await Hive.openBox<Categories>(categoriesHiveBox);
+    _categories = box.values.toList();
+
+    Map<String, Color> categoryColors = {};
+    int i = 0;
+
+    for (Categories category in _categories) {
+      categoryColors[category.name] = colorArray[i % colorArray.length];
+      i++;
+    }
+    return categoryColors;
   }
 }

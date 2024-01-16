@@ -3,6 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:expenso/providers/expense_provider.dart';
+import 'package:expenso/providers/categories_provider.dart';
 import 'package:expenso/dropdowns.dart';
 
 class BarChartScreen extends StatefulWidget {
@@ -14,9 +15,12 @@ class BarChartScreen extends StatefulWidget {
 
 class _BarChartScreenState extends State<BarChartScreen> {
   final ExpensesProvider _expensesProvider = ExpensesProvider();
+  final CategoriesProvider _categoriesProvider = CategoriesProvider();
   late int selectedYear;
   late int selectedMonth;
   late Future<Map<String, Map<String, dynamic>>> _categoryData;
+  late Future<Map<String, double?>> _categoryThresholds;
+  late Future<Map<String, Color>> _categoryColors;
 
   @override
   void initState() {
@@ -26,6 +30,8 @@ class _BarChartScreenState extends State<BarChartScreen> {
 
     _categoryData = _expensesProvider.calculateCategoryPercentagesBetween(
         selectedYear, selectedMonth, selectedYear, selectedMonth);
+    _categoryThresholds = _categoriesProvider.getCategoryThresholds();
+    _categoryColors = _categoriesProvider.generateCategoryColors();
   }
 
   @override
@@ -35,21 +41,27 @@ class _BarChartScreenState extends State<BarChartScreen> {
         _categoryData = _expensesProvider.calculateCategoryPercentagesBetween(
             selectedYear, selectedMonth, selectedYear, selectedMonth);
       });
-      print(_categoryData);
     }
 
     return Scaffold(
       body: FutureBuilder(
-          future: _categoryData,
+          future: Future.wait(
+              [_categoryData, _categoryThresholds, _categoryColors]),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const CircularProgressIndicator();
             } else if (snapshot.hasError) {
               return Text('Error: ${snapshot.error}');
             } else {
-              Map<String, Map<String, dynamic>> categoryData =
-                  snapshot.data as Map<String, Map<String, dynamic>>;
+              Map<String, Map<String, dynamic>> categoryData = (snapshot.data
+                  as List<dynamic>)[0] as Map<String, Map<String, dynamic>>;
+              Map<String, double?> categoryThresholds =
+                  (snapshot.data as List<dynamic>)[1] as Map<String, double?>;
+              Map<String, Color> categoryColors =
+                  (snapshot.data as List<dynamic>)[2] as Map<String, Color>;
+
               print(categoryData);
+              print(categoryThresholds);
 
               return Column(
                 children: [
@@ -103,7 +115,8 @@ class _BarChartScreenState extends State<BarChartScreen> {
                             show: true,
                             border: Border.all(color: Colors.grey, width: 1),
                           ),
-                          barGroups: createBarGroups(categoryData),
+                          barGroups: createBarGroups(
+                              categoryData, categoryThresholds, categoryColors),
                           extraLinesData: ExtraLinesData(
                             horizontalLines: [
                               HorizontalLine(
@@ -133,7 +146,9 @@ class _BarChartScreenState extends State<BarChartScreen> {
   }
 
   List<BarChartGroupData> createBarGroups(
-      Map<String, Map<String, dynamic>> categoryData) {
+      Map<String, Map<String, dynamic>> categoryData,
+      Map<String, double?> categoryThresholds,
+      Map<String, Color> categoryColors) {
     List<BarChartGroupData> barGroups = [];
     int i = 0;
 
@@ -145,12 +160,13 @@ class _BarChartScreenState extends State<BarChartScreen> {
           barRods: [
             BarChartRodData(
               toY: value,
-              color: colorArray[i % colorArray.length],
+              color: categoryColors[category],
               width: 30,
             ),
           ],
         ),
       );
+
       i++;
     }
 
