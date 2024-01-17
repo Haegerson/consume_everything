@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:expenso/providers/expense_provider.dart';
 import 'package:expenso/providers/categories_provider.dart';
 import 'package:expenso/dropdowns.dart';
+import 'dart:math';
 
 class BarChartScreen extends StatefulWidget {
   const BarChartScreen({super.key});
@@ -21,6 +22,7 @@ class _BarChartScreenState extends State<BarChartScreen> {
   late Future<Map<String, Map<String, dynamic>>> _categoryData;
   late Future<Map<String, double?>> _categoryThresholds;
   late Future<Map<String, Color>> _categoryColors;
+  double maxGlobalThreshold = 0.0;
 
   @override
   void initState() {
@@ -30,7 +32,8 @@ class _BarChartScreenState extends State<BarChartScreen> {
 
     _categoryData = _expensesProvider.calculateCategoryPercentagesBetween(
         selectedYear, selectedMonth, selectedYear, selectedMonth);
-    _categoryThresholds = _categoriesProvider.getCategoryThresholds();
+    _categoryThresholds =
+        _categoriesProvider.getCategoryThresholds(CategoryType.consumption);
     _categoryColors = _categoriesProvider.generateCategoryColors();
   }
 
@@ -60,9 +63,6 @@ class _BarChartScreenState extends State<BarChartScreen> {
               Map<String, Color> categoryColors =
                   (snapshot.data as List<dynamic>)[2] as Map<String, Color>;
 
-              print(categoryData);
-              print(categoryThresholds);
-
               return Column(
                 children: [
                   buildYearDropdown("Start Year", selectedYear, (int? value) {
@@ -88,11 +88,19 @@ class _BarChartScreenState extends State<BarChartScreen> {
                   ),
                   Expanded(
                     child: Padding(
-                      padding: const EdgeInsets.all(8.0),
+                      padding: const EdgeInsets.all(12.0),
                       child: BarChart(
                         BarChartData(
-                          groupsSpace: 10,
+                          maxY: calculateMaxYValue(
+                              categoryData, categoryThresholds),
+                          groupsSpace: 5,
                           titlesData: FlTitlesData(
+                            leftTitles: const AxisTitles(
+                              sideTitles: SideTitles(
+                                reservedSize: 40,
+                                showTitles: true,
+                              ),
+                            ),
                             topTitles: const AxisTitles(
                               sideTitles: SideTitles(showTitles: false),
                             ),
@@ -115,24 +123,11 @@ class _BarChartScreenState extends State<BarChartScreen> {
                             show: true,
                             border: Border.all(color: Colors.grey, width: 1),
                           ),
-                          barGroups: createBarGroups(
-                              categoryData, categoryThresholds, categoryColors),
+                          barGroups:
+                              createBarGroups(categoryData, categoryColors),
                           extraLinesData: ExtraLinesData(
-                            horizontalLines: [
-                              HorizontalLine(
-                                y: 10, // Set your threshold value
-                                color: Colors.red, // Color of the line
-                                strokeWidth: 2, // Width of the line
-                                dashArray: [5, 5], // Optional dash pattern
-                              ),
-                              HorizontalLine(
-                                y: 20, // Set another threshold value
-                                color: Colors.blue, // Color of the line
-                                strokeWidth: 2, // Width of the line
-                                dashArray: [5, 5], // Optional dash pattern
-                              ),
-                              // Add more lines as needed
-                            ],
+                            horizontalLines: createThresholdLines(categoryData,
+                                categoryThresholds, categoryColors),
                           ),
                         ),
                       ),
@@ -147,7 +142,6 @@ class _BarChartScreenState extends State<BarChartScreen> {
 
   List<BarChartGroupData> createBarGroups(
       Map<String, Map<String, dynamic>> categoryData,
-      Map<String, double?> categoryThresholds,
       Map<String, Color> categoryColors) {
     List<BarChartGroupData> barGroups = [];
     int i = 0;
@@ -186,4 +180,51 @@ class _BarChartScreenState extends State<BarChartScreen> {
       Map<String, Map<String, dynamic>> categoryData) {
     return categoryData.keys.toList();
   }
+}
+
+List<HorizontalLine> createThresholdLines(
+    Map<String, Map<String, dynamic>> categoryData,
+    Map<String, double?> categoryThresholds,
+    Map<String, Color> categoryColors) {
+  List<HorizontalLine> thresholdLines = [];
+  int i = 0;
+  for (String category in categoryThresholds.keys) {
+    double? value = categoryThresholds[category];
+    double summedExpenses = 0.0;
+    if (categoryData.containsKey(category)) {
+      summedExpenses = categoryData[category]!["absoluteValue"];
+    }
+
+    if ((value != null) && (summedExpenses > 0.0)) {
+      thresholdLines.add(
+        HorizontalLine(
+          y: value, // Set your threshold value
+          color: categoryColors[category], // Color of the line
+          strokeWidth: 2, // Width of the line
+          dashArray: [5, 5], // Optional dash pattern
+        ),
+      );
+    }
+    i++;
+  }
+  return thresholdLines;
+}
+
+double calculateMaxYValue(Map<String, Map<String, dynamic>> categoryData,
+    Map<String, double?> categoryThresholds) {
+  double maxValue = 0.0;
+  for (String category in categoryData.keys) {
+    double expenseValue = categoryData[category]!['absoluteValue'];
+
+    double? thresholdValue = categoryThresholds[category];
+    double nonNullThresholdValue = 0.0;
+    if (thresholdValue != null) {
+      nonNullThresholdValue = thresholdValue;
+    }
+    double localMaximum = max(expenseValue, nonNullThresholdValue);
+    if (localMaximum > maxValue) {
+      maxValue = localMaximum;
+    }
+  }
+  return maxValue;
 }

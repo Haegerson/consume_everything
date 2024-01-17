@@ -63,13 +63,15 @@ class CategoriesProvider extends ChangeNotifier {
   }
 
   // Get a map of category names and their thresholds
-  Future<Map<String, double?>> getCategoryThresholds() async {
+  Future<Map<String, double?>> getCategoryThresholds(String type) async {
     Box<Categories> box = await Hive.openBox<Categories>(categoriesHiveBox);
     _categories = box.values.toList();
+    Iterable<Categories> filteredCategories =
+        _categories.where((element) => (element.type == type));
 
     Map<String, double?> categoryThresholds = {};
 
-    for (Categories category in _categories) {
+    for (Categories category in filteredCategories) {
       categoryThresholds[category.name] = category.alertThreshold;
     }
 
