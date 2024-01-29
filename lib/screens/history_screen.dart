@@ -4,6 +4,8 @@ import 'package:expenso/providers/expense_provider.dart';
 import 'package:expenso/providers/incomes_provider.dart';
 import 'package:expenso/hives/expenses.dart';
 import 'package:expenso/hives/incomes.dart';
+import 'package:expenso/dropdowns.dart';
+import 'package:intl/intl.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({Key? key}) : super(key: key);
@@ -12,8 +14,12 @@ class HistoryScreen extends StatefulWidget {
 }
 
 class _HistoryScreenState extends State<HistoryScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   late TabController _tabController;
+  int selectedYear = DateTime.now().year;
 
   @override
   void initState() {
@@ -23,6 +29,7 @@ class _HistoryScreenState extends State<HistoryScreen>
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Expense History'),
@@ -34,62 +41,123 @@ class _HistoryScreenState extends State<HistoryScreen>
           ],
         ),
       ),
-      body: TabBarView(controller: _tabController, children: [
-        // Expsenses Tab
-        Consumer<ExpensesProvider>(
-          builder: (context, expensesProvider, child) {
-            return FutureBuilder<List<Expenses>>(
-              future: expensesProvider.getExpenses(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  // If the Future is still running, show a loading indicator
-                  return const CircularProgressIndicator();
-                } else if (snapshot.hasError) {
-                  // If the Future completed with an error, show an error message
-                  return Text('Error: ${snapshot.error}');
-                } else {
-                  // If the Future is completed successfully, build the ListView
-                  List<Expenses> expenseList = snapshot.data ?? [];
-                  return ListView.builder(
-                    itemCount: expenseList.length,
-                    itemBuilder: (context, index) {
-                      return ExpenseTile(expense: expenseList[index]);
+      body: Column(
+        children: [
+          buildYearDropdown("Select Year", selectedYear, (int? value) {
+            if (value != null) {
+              setState(() {
+                selectedYear = value;
+              });
+            }
+          }),
+          Expanded(
+            child: TabBarView(controller: _tabController, children: [
+              // Expsenses Tab
+              Consumer<ExpensesProvider>(
+                builder: (context, expensesProvider, child) {
+                  return FutureBuilder<List<Expenses>>(
+                    future: expensesProvider.getExpenses(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        // If the Future is still running, show a loading indicator
+                        return const CircularProgressIndicator();
+                      } else if (snapshot.hasError) {
+                        // If the Future completed with an error, show an error message
+                        return Text('Error: ${snapshot.error}');
+                      } else {
+                        // If the Future is completed successfully, build the ListView
+                        List<Expenses> expenseList = snapshot.data!
+                            .where((element) =>
+                                (element.date.year == selectedYear))
+                            .toList();
+                        Map<String, List<Expenses>> groupedExpenses =
+                            groupByMonth(expenseList);
+
+                        return ListView.builder(
+                          reverse: true,
+                          itemCount: groupedExpenses.length,
+                          itemBuilder: (context, index) {
+                            String month =
+                                groupedExpenses.keys.elementAt(index);
+                            List<Expenses> expensesInMonth =
+                                groupedExpenses[month]!.reversed.toList();
+
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Add a separator with the month and year
+                                ListTile(
+                                  title: Text(DateFormat('MMMM')
+                                      .format(expensesInMonth.first.date)),
+                                  dense: true,
+                                ),
+                                ListView.separated(
+                                  shrinkWrap: true,
+                                  itemCount: expensesInMonth.length,
+                                  itemBuilder: (context, index) {
+                                    return ExpenseTile(
+                                      expense: expensesInMonth[index],
+                                    );
+                                  },
+                                  separatorBuilder: (context, index) =>
+                                      const Divider(), // Add separators
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      }
                     },
                   );
-                }
-              },
-            );
-          },
-        ),
-        // Incomes Tab
-        Consumer<IncomesProvider>(
-          builder: (context, incomesProvider, child) {
-            return FutureBuilder<List<Incomes>>(
-              future: incomesProvider.getIncomes(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  // If the Future is still running, show a loading indicator
-                  return const CircularProgressIndicator();
-                } else if (snapshot.hasError) {
-                  // If the Future completed with an error, show an error message
-                  return Text('Error: ${snapshot.error}');
-                } else {
-                  // If the Future is completed successfully, build the ListView
-                  List<Incomes> incomeList = snapshot.data ?? [];
-                  return ListView.builder(
-                    itemCount: incomeList.length,
-                    itemBuilder: (context, index) {
-                      return IncomeTile(income: incomeList[index]);
+                },
+              ),
+              // Incomes Tab
+              Consumer<IncomesProvider>(
+                builder: (context, incomesProvider, child) {
+                  return FutureBuilder<List<Incomes>>(
+                    future: incomesProvider.getIncomes(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        // If the Future is still running, show a loading indicator
+                        return const CircularProgressIndicator();
+                      } else if (snapshot.hasError) {
+                        // If the Future completed with an error, show an error message
+                        return Text('Error: ${snapshot.error}');
+                      } else {
+                        // If the Future is completed successfully, build the ListView
+                        List<Incomes> incomeList = snapshot.data!
+                            .where((element) =>
+                                (element.date.year == selectedYear))
+                            .toList();
+                        return ListView.builder(
+                          itemCount: incomeList.length,
+                          itemBuilder: (context, index) {
+                            return IncomeTile(income: incomeList[index]);
+                          },
+                        );
+                      }
                     },
                   );
-                }
-              },
-            );
-          },
-        ),
-      ]),
+                },
+              ),
+            ]),
+          ),
+        ],
+      ),
     );
   }
+}
+
+Map<String, List<Expenses>> groupByMonth(List<Expenses> expenses) {
+  Map<String, List<Expenses>> groupedExpenses = {};
+
+  for (Expenses expense in expenses) {
+    String month = DateFormat('MMMM', 'en_US').format(expense.date);
+    groupedExpenses.putIfAbsent(month, () => []);
+    groupedExpenses[month]!.add(expense);
+  }
+
+  return groupedExpenses;
 }
 
 class ExpenseTile extends StatelessWidget {
