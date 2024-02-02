@@ -120,9 +120,17 @@ class _OverviewScreenState extends State<OverviewScreen> {
                     (nameController.text.isEmpty)
                         ? "Untitled"
                         : nameController.text;
-                final double? alertThreshold =
-                    double.parse(alertThresholdController.text);
-
+                double? alertThreshold;
+                if (alertThresholdController.text.isNotEmpty) {
+                  try {
+                    alertThreshold =
+                        double.parse(alertThresholdController.text);
+                  } catch (e) {
+                    // Handle the case where the input is not a valid double
+                    print("Invalid double input for threshold");
+                    alertThreshold = null;
+                  }
+                }
                 Categories newCategory = Categories(
                     name: categoryName,
                     type: selectedType,
