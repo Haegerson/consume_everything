@@ -2,6 +2,7 @@
 
 import 'package:expenso/const/constants.dart';
 import 'package:expenso/providers/categories_provider.dart';
+import 'package:expenso/old%20trash/history_screen2.dart';
 import 'package:expenso/screens/statistics_overview_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/adapters.dart';
@@ -14,13 +15,19 @@ import 'package:expenso/providers/incomes_provider.dart';
 import 'package:expenso/screens/history_screen.dart';
 import 'package:expenso/screens/manage_categories_screen.dart';
 import 'package:expenso/dropdowns.dart';
+import 'package:month_year_picker/month_year_picker.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await Hive.initFlutter();
   Hive.registerAdapter(ExpensesAdapter());
   Hive.registerAdapter(IncomesAdapter());
   Hive.registerAdapter(CategoriesAdapter());
+
+  // Initialize locale data for date formatting
+  await initializeDateFormatting('en_US');
 
   runApp(MultiProvider(providers: [
     ChangeNotifierProvider<ExpensesProvider>(create: (_) => ExpensesProvider()),
@@ -38,6 +45,13 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Expenso',
       theme: ThemeData.dark().copyWith(),
+      localizationsDelegates: [
+        // Add the MonthYearPickerLocalizations delegate
+        MonthYearPickerLocalizations.delegate,
+      ],
+      supportedLocales: [
+        const Locale('en', 'US'), // Add other locales as needed
+      ],
       home: OverviewScreen(title: 'Flutter Demo Home Page'),
     );
   }

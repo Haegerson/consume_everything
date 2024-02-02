@@ -109,3 +109,34 @@ List<Color> colorArray = [
   const Color(0xFF99E6E6),
   const Color(0xFF6666FF)
 ];
+
+class SelectedYearMonthWidget extends StatelessWidget {
+  final int selectedYear;
+  final int selectedMonth;
+
+  SelectedYearMonthWidget(
+      {required this.selectedYear, required this.selectedMonth});
+
+  @override
+  Widget build(BuildContext context) {
+    Widget monthText = getMonthTextByDouble(selectedMonth.toDouble());
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.black,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '$selectedYear',
+            style: TextStyle(color: Colors.white),
+          ),
+          SizedBox(width: 20),
+          monthText,
+        ],
+      ),
+    );
+  }
+}

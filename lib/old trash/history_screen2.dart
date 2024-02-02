@@ -4,23 +4,25 @@ import 'package:expenso/providers/expense_provider.dart';
 import 'package:expenso/providers/incomes_provider.dart';
 import 'package:expenso/hives/expenses.dart';
 import 'package:expenso/hives/incomes.dart';
-import 'package:month_year_picker/month_year_picker.dart';
-import 'package:expenso/const/constants.dart';
+import 'package:expenso/dropdowns.dart';
+import 'package:intl/intl.dart';
 
-class HistoryScreen extends StatefulWidget {
-  const HistoryScreen({Key? key}) : super(key: key);
+class HistoryScreen2 extends StatefulWidget {
+  const HistoryScreen2({Key? key}) : super(key: key);
   @override
-  State<HistoryScreen> createState() => _HistoryScreenState();
+  State<HistoryScreen2> createState() => _HistoryScreen2State();
 }
 
-class _HistoryScreenState extends State<HistoryScreen>
+class _HistoryScreen2State extends State<HistoryScreen2>
     with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
 
+  Map<String, bool> _expansionStates = {};
+  ScrollController _scrollController = ScrollController();
+
   late TabController _tabController;
   int selectedYear = DateTime.now().year;
-  int selectedMonth = DateTime.now().month;
 
   @override
   void initState() {
@@ -44,17 +46,16 @@ class _HistoryScreenState extends State<HistoryScreen>
       ),
       body: Column(
         children: [
-          SelectedYearMonthWidget(
-              selectedYear: selectedYear, selectedMonth: selectedMonth),
-          ElevatedButton(
-            onPressed: () async {
-              await _selectYearMonth(context);
-            },
-            child: Text('Select Year and Month'),
-          ),
+          buildYearDropdown("Select Year", selectedYear, (int? value) {
+            if (value != null) {
+              setState(() {
+                selectedYear = value;
+              });
+            }
+          }),
           Expanded(
             child: TabBarView(controller: _tabController, children: [
-              // Expenses Tab
+              // Expsenses Tab
               Consumer<ExpensesProvider>(
                 builder: (context, expensesProvider, child) {
                   return FutureBuilder<List<Expenses>>(
@@ -70,20 +71,44 @@ class _HistoryScreenState extends State<HistoryScreen>
                         // If the Future is completed successfully, build the ListView
                         List<Expenses> expenseList = snapshot.data!
                             .where((element) =>
-                                (element.date.year == selectedYear &&
-                                    element.date.month == selectedMonth))
+                                (element.date.year == selectedYear))
                             .toList();
-                        return ListView.builder(
-                          itemCount: expenseList.length,
-                          itemBuilder: (context, index) {
-                            return ExpenseTile(
-                              expense: expenseList[index],
-                              onTileMovedCallback: () {
-                                // Do something when tile is moved
-                              },
-                            );
-                          },
-                        );
+                        Map<String, List<Expenses>> groupedExpenses =
+                            groupByMonth(expenseList);
+
+                        return Scrollable(
+                            controller: _scrollController,
+                            restorationId: 'expensesScrollable',
+                            viewportBuilder:
+                                (BuildContext context, ViewportOffset) {
+                              return ListView.builder(
+                                itemCount: groupedExpenses.length,
+                                itemBuilder: (context, index) {
+                                  String month =
+                                      groupedExpenses.keys.elementAt(index);
+                                  List<Expenses> expensesInMonth =
+                                      groupedExpenses[month]!.reversed.toList();
+
+                                  return ExpansionTile(
+                                    key: UniqueKey(),
+                                    title: Text(DateFormat('MMMM yyyy')
+                                        .format(expensesInMonth.first.date)),
+                                    onExpansionChanged: (bool isExpanded) {
+                                      setState(() {
+                                        _expansionStates[month] = isExpanded;
+                                      });
+                                    },
+                                    initiallyExpanded:
+                                        _expansionStates[month] ?? false,
+                                    children: expensesInMonth
+                                        .map((expense) => ExpenseTile(
+                                              expense: expense,
+                                            ))
+                                        .toList(),
+                                  );
+                                },
+                              );
+                            });
                       }
                     },
                   );
@@ -124,64 +149,56 @@ class _HistoryScreenState extends State<HistoryScreen>
       ),
     );
   }
+}
 
-  Future<void> _selectYearMonth(BuildContext context) async {
-    Locale localeObj = const Locale("en");
-    DateTime? selectedDate = await showMonthYearPicker(
-      locale: localeObj,
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
-      //locale: Locale("en"),
-    );
+Map<String, List<Expenses>> groupByMonth(List<Expenses> expenses) {
+  Map<String, List<Expenses>> groupedExpenses = {};
 
-    if (selectedDate != null) {
-      setState(() {
-        selectedYear = selectedDate.year;
-        selectedMonth = selectedDate.month;
-      });
-    }
+  for (Expenses expense in expenses) {
+    String month = DateFormat('MMMM', 'en_US').format(expense.date);
+    groupedExpenses.putIfAbsent(month, () => []);
+    groupedExpenses[month]!.add(expense);
   }
+
+  return groupedExpenses;
 }
 
 class ExpenseTile extends StatelessWidget {
   final Expenses expense;
-  final VoidCallback onTileMovedCallback;
 
-  const ExpenseTile(
-      {required this.expense, required this.onTileMovedCallback, Key? key})
-      : super(key: key);
+  const ExpenseTile({required this.expense, Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Dismissible(
-      key: Key(expense.key.toString()), // Use a unique key for each tile
-      background: Container(
-        color: Colors.red, // Set the background color when swiping
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 16.0),
-        child: const Icon(
-          Icons.delete,
-          color: Colors.white,
-        ),
-      ),
-      direction: DismissDirection.endToStart,
-      onDismissed: (direction) {
-        // Handle the dismissal here:
-        Provider.of<ExpensesProvider>(context, listen: false)
-            .deleteExpense(expense);
+    return InkWell(
+      onTap: () {
+        // Handle tile tap if needed, e.g., navigate to a detailed view
       },
-      onUpdate: (details) {
-        onTileMovedCallback();
-      },
-      child: ListTile(
-        title: Text(expense.category.name),
-        subtitle: Text(
-            'Amount: \$${expense.amount.toStringAsFixed(2)}\nDate: ${expense.date.toString()}'),
-        onTap: () {
-          // Handle tile tap if needed, e.g., navigate to a detailed view
-        },
+      child: Row(
+        children: [
+          Expanded(
+            child: ListTile(
+              title: Text(expense.category.name),
+              subtitle: Text(
+                'Amount: \$${expense.amount.toStringAsFixed(2)}\nDate: ${expense.date.toString()}',
+              ),
+              onTap: () {
+                // Handle tile tap if needed, e.g., navigate to a detailed view
+              },
+            ),
+          ),
+          GestureDetector(
+            onTap: () {
+              // Call your method when the bin icon is tapped
+              Provider.of<ExpensesProvider>(context, listen: false)
+                  .deleteExpense(expense);
+            },
+            child: Icon(
+              Icons.delete,
+              color: Colors.red, // You can customize the color as needed
+            ),
+          ),
+        ],
       ),
     );
   }
