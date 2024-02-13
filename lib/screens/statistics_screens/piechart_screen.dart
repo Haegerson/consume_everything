@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:expenso/providers/expense_provider.dart';
 import 'package:expenso/dropdowns.dart';
+import 'package:month_year_picker/month_year_picker.dart';
 // https://www.youtube.com/watch?v=rZx_isqXrhg for touch effects
 
 class PieChartScreen extends StatefulWidget {
@@ -58,41 +59,27 @@ class _PieChartScreenState extends State<PieChartScreen> {
             } else {
               Map<String, Map<String, dynamic>> categoryData =
                   snapshot.data as Map<String, Map<String, dynamic>>;
-              print(categoryData);
 
               return Column(
                 children: [
-                  buildYearDropdown("Start Year", selectedStartYear,
-                      (int? value) {
-                    setState(() {
-                      if (value != null) {
-                        selectedStartYear = value;
-                      }
-                    });
-                  }),
-                  buildMonthDropdown("Start Month", selectedStartMonth,
-                      (int? value) {
-                    if (value != null) {
-                      setState(() {
-                        selectedStartMonth = value;
-                      });
-                    }
-                  }),
-                  buildYearDropdown("End Year", selectedEndYear, (int? value) {
-                    if (value != null) {
-                      setState(() {
-                        selectedEndYear = value;
-                      });
-                    }
-                  }),
-                  buildMonthDropdown("End Month", selectedEndMonth,
-                      (int? value) {
-                    if (value != null) {
-                      setState(() {
-                        selectedEndMonth = value;
-                      });
-                    }
-                  }),
+                  SelectedYearMonthWidget(
+                      selectedYear: selectedStartYear,
+                      selectedMonth: selectedStartMonth),
+                  ElevatedButton(
+                    onPressed: () async {
+                      await _selectStartYearMonth(context);
+                    },
+                    child: Text('Select Year and Month'),
+                  ),
+                  SelectedYearMonthWidget(
+                      selectedYear: selectedEndYear,
+                      selectedMonth: selectedEndMonth),
+                  ElevatedButton(
+                    onPressed: () async {
+                      await _selectEndYearMonth(context);
+                    },
+                    child: Text('Select Year and Month'),
+                  ),
                   ElevatedButton(
                     onPressed: () {
                       _refreshChart();
@@ -115,6 +102,44 @@ class _PieChartScreenState extends State<PieChartScreen> {
             }
           }),
     );
+  }
+
+  Future<void> _selectStartYearMonth(BuildContext context) async {
+    Locale localeObj = const Locale("en");
+    DateTime? selectedDate = await showMonthYearPicker(
+      locale: localeObj,
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      //locale: Locale("en"),
+    );
+
+    if (selectedDate != null) {
+      setState(() {
+        selectedStartYear = selectedDate.year;
+        selectedStartMonth = selectedDate.month;
+      });
+    }
+  }
+
+  Future<void> _selectEndYearMonth(BuildContext context) async {
+    Locale localeObj = const Locale("en");
+    DateTime? selectedDate = await showMonthYearPicker(
+      locale: localeObj,
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      //locale: Locale("en"),
+    );
+
+    if (selectedDate != null) {
+      setState(() {
+        selectedEndYear = selectedDate.year;
+        selectedEndMonth = selectedDate.month;
+      });
+    }
   }
 }
 

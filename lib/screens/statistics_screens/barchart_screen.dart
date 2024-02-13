@@ -6,6 +6,7 @@ import 'package:expenso/providers/expense_provider.dart';
 import 'package:expenso/providers/categories_provider.dart';
 import 'package:expenso/dropdowns.dart';
 import 'dart:math';
+import 'package:month_year_picker/month_year_picker.dart';
 
 class BarChartScreen extends StatefulWidget {
   const BarChartScreen({super.key});
@@ -65,26 +66,14 @@ class _BarChartScreenState extends State<BarChartScreen> {
 
               return Column(
                 children: [
-                  buildYearDropdown("Start Year", selectedYear, (int? value) {
-                    setState(() {
-                      if (value != null) {
-                        selectedYear = value;
-                      }
-                    });
-                  }),
-                  buildMonthDropdown("Start Month", selectedMonth,
-                      (int? value) {
-                    setState(() {
-                      if (value != null) {
-                        selectedMonth = value;
-                      }
-                    });
-                  }),
+                  SelectedYearMonthWidget(
+                      selectedYear: selectedYear, selectedMonth: selectedMonth),
                   ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
+                      await _selectYearMonth(context);
                       _refreshChart();
                     },
-                    child: Text("Calculate!"),
+                    child: Text('Select Year and Month'),
                   ),
                   Expanded(
                     child: Padding(
@@ -138,6 +127,25 @@ class _BarChartScreenState extends State<BarChartScreen> {
             }
           }),
     );
+  }
+
+  Future<void> _selectYearMonth(BuildContext context) async {
+    Locale localeObj = const Locale("en");
+    DateTime? selectedDate = await showMonthYearPicker(
+      locale: localeObj,
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      //locale: Locale("en"),
+    );
+
+    if (selectedDate != null) {
+      setState(() {
+        selectedYear = selectedDate.year;
+        selectedMonth = selectedDate.month;
+      });
+    }
   }
 
   List<BarChartGroupData> createBarGroups(
