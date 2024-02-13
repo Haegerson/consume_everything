@@ -24,6 +24,7 @@ class _BarChartScreenState extends State<BarChartScreen> {
   late Future<Map<String, double?>> _categoryThresholds;
   late Future<Map<String, Color>> _categoryColors;
   double maxGlobalThreshold = 0.0;
+  bool showThresholdLines = true; // Added boolean variable to toggle thresholds
 
   @override
   void initState() {
@@ -75,6 +76,20 @@ class _BarChartScreenState extends State<BarChartScreen> {
                     },
                     child: Text('Select Year and Month'),
                   ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text('Show alert thresholds'),
+                      Switch(
+                        value: showThresholdLines,
+                        onChanged: (value) {
+                          setState(() {
+                            showThresholdLines = value;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.all(12.0),
@@ -115,8 +130,10 @@ class _BarChartScreenState extends State<BarChartScreen> {
                           barGroups:
                               createBarGroups(categoryData, categoryColors),
                           extraLinesData: ExtraLinesData(
-                            horizontalLines: createThresholdLines(categoryData,
-                                categoryThresholds, categoryColors),
+                            horizontalLines: showThresholdLines
+                                ? createThresholdLines(categoryData,
+                                    categoryThresholds, categoryColors)
+                                : [],
                           ),
                         ),
                       ),
