@@ -49,6 +49,9 @@ class _PieChartScreenState extends State<PieChartScreen> {
     }
 
     return Scaffold(
+      appBar: AppBar(
+        title: Text('Piechart'),
+      ),
       body: FutureBuilder(
           future: _categoryData,
           builder: (context, snapshot) {

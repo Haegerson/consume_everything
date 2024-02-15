@@ -49,6 +49,9 @@ class _BarChartScreenState extends State<BarChartScreen> {
     }
 
     return Scaffold(
+      appBar: AppBar(
+        title: Text('Barchart'),
+      ),
       body: FutureBuilder(
           future: Future.wait(
               [_categoryData, _categoryThresholds, _categoryColors]),

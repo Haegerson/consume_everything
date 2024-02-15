@@ -44,6 +44,9 @@ class _LineChartScreenState extends State<LineChartScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: Text('Linechart'),
+      ),
       body: FutureBuilder(
         future: Future.wait([
           _monthlyConsumeExpenses,
