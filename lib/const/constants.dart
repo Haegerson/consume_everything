@@ -140,3 +140,50 @@ class SelectedYearMonthWidget extends StatelessWidget {
     );
   }
 }
+
+class NavigationPanel extends StatelessWidget {
+  final String panelText;
+  final Widget targetScreen;
+  final Icon? icon;
+  final int flex;
+  const NavigationPanel(
+      {required this.panelText,
+      required this.targetScreen,
+      required this.icon,
+      required this.flex});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      flex: flex,
+      child: GestureDetector(
+        onTap: () {
+          // Navigate to another screen when tapped
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => targetScreen,
+            ),
+          );
+        },
+        child: Container(
+          margin: EdgeInsets.all(5),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.white), // Outline color
+            borderRadius: BorderRadius.circular(10), // Rounded corners
+          ),
+          child: Center(
+            child: Text(
+              panelText,
+              style: TextStyle(
+                color: Colors.white, // Text color
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

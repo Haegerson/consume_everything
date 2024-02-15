@@ -1,8 +1,7 @@
-// ignore_for_file: prefer_const_constructors, avoid_print, prefer_const_constructors_in_immutables
+// ignore_for_file: prefer_const_constructors, avoid_print, prefer_const_constructors_in_immutables, prefer_const_literals_to_create_immutables
 
 import 'package:expenso/const/constants.dart';
 import 'package:expenso/providers/categories_provider.dart';
-import 'package:expenso/old%20trash/history_screen2.dart';
 import 'package:expenso/screens/statistics_overview_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/adapters.dart';
@@ -360,117 +359,101 @@ class _OverviewScreenState extends State<OverviewScreen> {
       );
     }
 
-    Categories cat = Categories(
-        name: "test", type: CategoryType.consumption, alertThreshold: null);
-    // List<Categories> categories = [];
-    Expenses exp = Expenses(
-      category: cat,
-      amount: 10.0,
-      comment: 'Sample comment',
-      date: DateTime.now(),
-    );
     return Scaffold(
       appBar: AppBar(
         title: Text(""),
       ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(14.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: <Widget>[
-              Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    // Navigate to another screen when tapped
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => ManageCategoriesScreen()),
-                    );
-                  },
-                  child: Container(
-                    margin: EdgeInsets.all(5),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.white), // Outline color
-                      borderRadius: BorderRadius.circular(
-                          10), // Optional: for rounded corners
-                    ),
-                    child: Center(
-                      child: Text(
-                        'Categories',
-                        style: TextStyle(
-                          color: Colors.white, // Text color
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Expanded(
+            flex: 2,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Text(
+                  'February',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 24,
                   ),
                 ),
-              ),
-              Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    // Navigate to another screen when tapped
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => StatisticsOverviewScreen()),
-                    );
-                  },
-                  child: Container(
-                    margin: EdgeInsets.all(5),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.white), // Outline color
-                      borderRadius: BorderRadius.circular(
-                          10), // Optional: for rounded corners
-                    ),
-                    child: Center(
-                      child: Text(
-                        'Statistics',
-                        style: TextStyle(
-                          color: Colors.white, // Text color
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Text(
+                      'Exp: 0€',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 24,
                       ),
                     ),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    // Navigate to another screen when tapped
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => HistoryScreen()),
-                    );
-                  },
-                  child: Container(
-                    margin: EdgeInsets.all(5),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.white), // Outline color
-                      borderRadius: BorderRadius.circular(
-                          10), // Optional: for rounded corners
-                    ),
-                    child: Center(
-                      child: Text(
-                        'History',
-                        style: TextStyle(
-                          color: Colors.white, // Text color
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
+                    Text(
+                      'Exp: 0€',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 24,
                       ),
                     ),
+                  ],
+                ),
+                Text(
+                  'Categores: bla, bla, bla',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 24,
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+          Expanded(
+            flex: 2,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.grey[850], // Dark grey color
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20.0), // Rounded top-left corner
+                  topRight: Radius.circular(20.0), // Rounded top-right corner
+                ),
+              ),
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(14.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: <Widget>[
+                      NavigationPanel(
+                        panelText: "Categories",
+                        targetScreen: ManageCategoriesScreen(),
+                        icon: null,
+                        flex: 1,
+                      ),
+                      NavigationPanel(
+                        panelText: "Statistics",
+                        targetScreen: StatisticsOverviewScreen(),
+                        icon: null,
+                        flex: 1,
+                      ),
+                      NavigationPanel(
+                        panelText: "History",
+                        targetScreen: HistoryScreen(),
+                        icon: null,
+                        flex: 1,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
       floatingActionButton: Row(
         mainAxisAlignment: MainAxisAlignment.end,
@@ -483,6 +466,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
             tooltip: 'Add Expense',
             child: const Text("Exp"),
           ),
+          SizedBox(width: 10), // Add some space between FloatingActionButton
           FloatingActionButton(
             heroTag: "addIncome",
             onPressed: () {
