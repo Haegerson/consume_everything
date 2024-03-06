@@ -16,6 +16,7 @@ import 'package:expenso/screens/manage_categories_screen.dart';
 import 'package:expenso/dropdowns.dart';
 import 'package:month_year_picker/month_year_picker.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:intl/intl.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -66,15 +67,46 @@ class OverviewScreen extends StatefulWidget {
 }
 
 class _OverviewScreenState extends State<OverviewScreen> {
+  final ExpensesProvider expensesProvider = ExpensesProvider();
+  final IncomesProvider incomesProvider = IncomesProvider();
+  final CategoriesProvider categProvider = CategoriesProvider();
+  ValueNotifier<int> _updateNotifier = ValueNotifier<int>(0);
+  void refreshData() {
+    setState(() {
+      _updateNotifier
+          .value++; // Increment the ValueNotifier to trigger a rebuild
+      // Trigger a rebuild of the relevant data
+      _currentConsumeExpenses =
+          expensesProvider.getCurrentExpenses(CategoryType.consumption);
+      _currentSavingsExpenses =
+          expensesProvider.getCurrentExpenses(CategoryType.savings);
+      _currentIncomes = incomesProvider.getCurrentIncomes();
+    });
+  }
+
   final GlobalKey<DropdownCategoryNamesState> _dropdownExpenseCategoryNamesKey =
       GlobalKey();
   final GlobalKey<DropdownCategoryNamesState> _dropdownIncomesCategoryNamesKey =
       GlobalKey();
+  late Future<double> _currentConsumeExpenses;
+  late Future<double> _currentSavingsExpenses;
+  late Future<double> _currentIncomes;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentConsumeExpenses =
+        expensesProvider.getCurrentExpenses(CategoryType.consumption);
+    _currentSavingsExpenses =
+        expensesProvider.getCurrentExpenses(CategoryType.savings);
+    _currentIncomes = incomesProvider.getCurrentIncomes();
+  }
+
   @override
   Widget build(BuildContext context) {
-    CategoriesProvider categProvider = Provider.of<CategoriesProvider>(context);
-    ExpensesProvider expensesProvider = Provider.of<ExpensesProvider>(context);
-    IncomesProvider incomesProvider = Provider.of<IncomesProvider>(context);
+    // CategoriesProvider categProvider = Provider.of<CategoriesProvider>(context);
+    // ExpensesProvider expensesProvider = Provider.of<ExpensesProvider>(context);
+    // IncomesProvider incomesProvider = Provider.of<IncomesProvider>(context);
 
     void showAddCategoryDialog(BuildContext context) {
       TextEditingController nameController = TextEditingController();
@@ -243,9 +275,15 @@ class _OverviewScreenState extends State<OverviewScreen> {
                 // Add the new Expense to database:
 
                 expensesProvider.createExpense(newExp);
+                _currentConsumeExpenses = expensesProvider
+                    .getCurrentExpenses(CategoryType.consumption);
+                _currentSavingsExpenses =
+                    expensesProvider.getCurrentExpenses(CategoryType.savings);
 
                 // Close the dialog
                 Navigator.of(context).pop();
+                _updateNotifier
+                    .value++; // Increment the ValueNotifier to trigger a rebuild
               },
               child: Text("Save"),
             ),
@@ -339,12 +377,15 @@ class _OverviewScreenState extends State<OverviewScreen> {
                 newInc.date = DateTime.parse(dateController.text);
                 newInc.comment = commentController.text;
 
-                // Add the new Expense to database:
+                // Add the new Income to database:
 
                 incomesProvider.createIncome(newInc);
+                _currentIncomes = incomesProvider.getCurrentIncomes();
 
                 // Close the dialog
                 Navigator.of(context).pop();
+                _updateNotifier
+                    .value++; // Increment the ValueNotifier to trigger a rebuild
               },
               child: Text("Save"),
             ),
@@ -359,124 +400,206 @@ class _OverviewScreenState extends State<OverviewScreen> {
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(""),
-      ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Expanded(
-            flex: 2,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                Text(
-                  'February',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 24,
-                  ),
-                ),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    Text(
-                      'Exp: 0€',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 24,
-                      ),
+    return ValueListenableBuilder(
+        valueListenable: _updateNotifier,
+        builder: (context, _, __) {
+          return FutureBuilder(
+              future: Future.wait([
+                _currentConsumeExpenses,
+                _currentSavingsExpenses,
+                _currentIncomes,
+                expensesProvider.getCategoriesOverThreshold()
+              ]), // Use Future.wait to wait for all futures
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  // While the Future is still loading
+                  return CircularProgressIndicator();
+                } else if (snapshot.hasError) {
+                  // If an error occurred
+                  return Text('Error: ${snapshot.error}');
+                } else {
+                  double currentConsumeExpenses =
+                      (snapshot.data as List<dynamic>)[0] as double;
+                  double currentSavingsExpenses =
+                      (snapshot.data as List<dynamic>)[1] as double;
+                  double currentIncomes =
+                      (snapshot.data as List<dynamic>)[2] as double;
+                  Map<String, double> categoriesOverThreshold = (snapshot.data
+                      as List<dynamic>)[3] as Map<String, double>;
+                  return Scaffold(
+                    appBar: AppBar(
+                      title: Text(""),
                     ),
-                    Text(
-                      'Exp: 0€',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 24,
-                      ),
+                    body: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              Row(
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Text(
+                                      DateFormat('MMMM, yyyy')
+                                          .format(DateTime.now()),
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 24,
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: 50,
+                                  )
+                                ],
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  Text(
+                                    "Consume: ${currentConsumeExpenses.toString()}",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 24,
+                                    ),
+                                  ),
+                                  Text(
+                                    "Savings: ${currentSavingsExpenses.toString()}",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 24,
+                                    ),
+                                  ),
+                                  Text(
+                                    "Incomes: ${currentIncomes.toString()}",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 24,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              ExpansionTile(
+                                title: Text(
+                                  'Alerts',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 24,
+                                  ),
+                                ),
+                                children: [
+                                  ListView(
+                                    shrinkWrap: true,
+                                    children: categoriesOverThreshold.keys
+                                        .map((categoryName) {
+                                      return ListTile(
+                                        title: Text(
+                                          categoryName,
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 20,
+                                          ),
+                                        ),
+                                      );
+                                    }).toList(),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          flex: 2,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.grey[850], // Dark grey color
+                              borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(
+                                    20.0), // Rounded top-left corner
+                                topRight: Radius.circular(
+                                    20.0), // Rounded top-right corner
+                              ),
+                            ),
+                            child: Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(14.0),
+                                child: Column(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
+                                  children: <Widget>[
+                                    NavigationPanel(
+                                      panelText: "Categories",
+                                      targetScreen: ManageCategoriesScreen(),
+                                      icon: null,
+                                      flex: 1,
+                                    ),
+                                    NavigationPanel(
+                                      panelText: "Statistics",
+                                      targetScreen: StatisticsOverviewScreen(),
+                                      icon: null,
+                                      flex: 1,
+                                    ),
+                                    NavigationPanel(
+                                      panelText: "History",
+                                      targetScreen: HistoryScreen(
+                                          refreshCallback: refreshData),
+                                      icon: null,
+                                      flex: 1,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                Text(
-                  'Categores: bla, bla, bla',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 24,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.grey[850], // Dark grey color
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(20.0), // Rounded top-left corner
-                  topRight: Radius.circular(20.0), // Rounded top-right corner
-                ),
-              ),
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(14.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: <Widget>[
-                      NavigationPanel(
-                        panelText: "Categories",
-                        targetScreen: ManageCategoriesScreen(),
-                        icon: null,
-                        flex: 1,
-                      ),
-                      NavigationPanel(
-                        panelText: "Statistics",
-                        targetScreen: StatisticsOverviewScreen(),
-                        icon: null,
-                        flex: 1,
-                      ),
-                      NavigationPanel(
-                        panelText: "History",
-                        targetScreen: HistoryScreen(),
-                        icon: null,
-                        flex: 1,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-      floatingActionButton: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          FloatingActionButton(
-            heroTag: "addExpense",
-            onPressed: () {
-              showAddExpenseDialog(context);
-            },
-            tooltip: 'Add Expense',
-            child: const Text("Exp"),
-          ),
-          SizedBox(width: 10), // Add some space between FloatingActionButton
-          FloatingActionButton(
-            heroTag: "addIncome",
-            onPressed: () {
-              showAddIncomeDialog(context);
-            },
-            tooltip: 'Add Income',
-            child: const Text("Inc"),
-          ),
-        ],
-      ),
-    );
+                    floatingActionButton: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        FloatingActionButton(
+                          heroTag: "addExpense",
+                          onPressed: () {
+                            showAddExpenseDialog(context);
+                            setState(() {
+                              // Update the state variables
+                              _currentConsumeExpenses = expensesProvider
+                                  .getCurrentExpenses(CategoryType.consumption);
+                              _currentSavingsExpenses = expensesProvider
+                                  .getCurrentExpenses(CategoryType.savings);
+                            });
+                          },
+                          tooltip: 'Add Expense',
+                          child: const Text("Exp"),
+                        ),
+                        SizedBox(
+                            width:
+                                10), // Add some space between FloatingActionButton
+                        FloatingActionButton(
+                          heroTag: "addIncome",
+                          onPressed: () {
+                            showAddIncomeDialog(context);
+                          },
+                          tooltip: 'Add Income',
+                          child: const Text("Inc"),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+              });
+        });
   }
 }

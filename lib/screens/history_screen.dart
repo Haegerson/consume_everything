@@ -8,7 +8,11 @@ import 'package:month_year_picker/month_year_picker.dart';
 import 'package:expenso/const/constants.dart';
 
 class HistoryScreen extends StatefulWidget {
-  const HistoryScreen({Key? key}) : super(key: key);
+  final VoidCallback refreshCallback;
+  const HistoryScreen({
+    Key? key,
+    required this.refreshCallback,
+  }) : super(key: key);
   @override
   State<HistoryScreen> createState() => _HistoryScreenState();
 }
@@ -31,6 +35,8 @@ class _HistoryScreenState extends State<HistoryScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    VoidCallback refreshCallback = widget.refreshCallback;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Expense History'),
@@ -81,6 +87,7 @@ class _HistoryScreenState extends State<HistoryScreen>
                               onTileMovedCallback: () {
                                 // Do something when tile is moved
                               },
+                              refreshCallback: refreshCallback,
                             );
                           },
                         );
@@ -110,7 +117,10 @@ class _HistoryScreenState extends State<HistoryScreen>
                         return ListView.builder(
                           itemCount: incomeList.length,
                           itemBuilder: (context, index) {
-                            return IncomeTile(income: incomeList[index]);
+                            return IncomeTile(
+                              income: incomeList[index],
+                              refreshCallback: refreshCallback,
+                            );
                           },
                         );
                       }
@@ -148,9 +158,13 @@ class _HistoryScreenState extends State<HistoryScreen>
 class ExpenseTile extends StatelessWidget {
   final Expenses expense;
   final VoidCallback onTileMovedCallback;
+  final VoidCallback refreshCallback;
 
   const ExpenseTile(
-      {required this.expense, required this.onTileMovedCallback, Key? key})
+      {required this.expense,
+      required this.onTileMovedCallback,
+      required this.refreshCallback,
+      Key? key})
       : super(key: key);
 
   @override
@@ -171,6 +185,7 @@ class ExpenseTile extends StatelessWidget {
         // Handle the dismissal here:
         Provider.of<ExpensesProvider>(context, listen: false)
             .deleteExpense(expense);
+        refreshCallback();
       },
       onUpdate: (details) {
         onTileMovedCallback();
@@ -189,8 +204,11 @@ class ExpenseTile extends StatelessWidget {
 
 class IncomeTile extends StatelessWidget {
   final Incomes income;
+  final VoidCallback refreshCallback;
 
-  const IncomeTile({required this.income, Key? key}) : super(key: key);
+  const IncomeTile(
+      {required this.income, required this.refreshCallback, Key? key})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -210,6 +228,7 @@ class IncomeTile extends StatelessWidget {
         // Handle the dismissal here:
         Provider.of<IncomesProvider>(context, listen: false)
             .deleteIncome(income);
+        refreshCallback();
       },
       child: ListTile(
         title: Text(income.category.name),

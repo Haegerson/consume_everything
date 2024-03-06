@@ -57,4 +57,23 @@ class IncomesProvider extends ChangeNotifier {
     }
     return monthlyIncomes;
   }
+
+  //Expenses of current month
+  Future<double> getCurrentIncomes() async {
+    int year = DateTime.now().year;
+    int month = DateTime.now().month;
+    List<Incomes> incomes = await getIncomes();
+
+    List<Incomes> filteredIncomes = incomes
+        .where((income) =>
+            (income.date.year == year) && (income.date.month == month))
+        .toList();
+
+    double sum = 0;
+
+    for (Incomes income in filteredIncomes) {
+      sum += income.amount;
+    }
+    return sum;
+  }
 }

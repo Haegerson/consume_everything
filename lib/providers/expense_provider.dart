@@ -54,6 +54,27 @@ class ExpensesProvider extends ChangeNotifier {
     return monthlyExpenses;
   }
 
+  //Expenses of current month
+  Future<double> getCurrentExpenses(String type) async {
+    int year = DateTime.now().year;
+    int month = DateTime.now().month;
+    List<Expenses> expenses = await getExpenses();
+
+    List<Expenses> filteredExpenses = expenses
+        .where((expense) =>
+            (expense.date.year == year) &&
+            (expense.date.month == month) &&
+            (expense.category.type == type))
+        .toList();
+
+    double sum = 0;
+
+    for (Expenses expense in filteredExpenses) {
+      sum += expense.amount;
+    }
+    return sum;
+  }
+
   // remove an expense
   Future<void> deleteExpense(Expenses exp) async {
     Box<Expenses> box = await Hive.openBox<Expenses>(expensesHiveBox);
@@ -103,5 +124,36 @@ class ExpensesProvider extends ChangeNotifier {
     });
 
     return categoryData;
+  }
+
+  Future<Map<String, double>> getCategoriesOverThreshold() async {
+    // Get the current month and year
+    int currentYear = DateTime.now().year;
+    int currentMonth = DateTime.now().month;
+
+    // Get the expenses for the current month
+    List<Expenses> expenses = await getExpenses();
+    List<Expenses> currentMonthExpenses = expenses
+        .where((expense) =>
+            expense.date.year == currentYear &&
+            expense.date.month == currentMonth)
+        .toList();
+
+    // Initialize a map to store category names and their summed expenses
+    Map<String, double> categoriesExpensesMap = {};
+
+    // Loop through the current month's expenses
+    for (var expense in currentMonthExpenses) {
+      // Check if the category's total expenses exceed the alert threshold
+      if (expense.category.alertThreshold != null &&
+          expense.category.alertThreshold! < expense.amount) {
+        // Add the expense amount to the total expenses for the category
+        categoriesExpensesMap.update(
+            expense.category.name, (value) => value + expense.amount,
+            ifAbsent: () => expense.amount);
+      }
+    }
+
+    return categoriesExpensesMap;
   }
 }
