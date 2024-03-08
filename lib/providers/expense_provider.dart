@@ -27,7 +27,8 @@ class ExpensesProvider extends ChangeNotifier {
   }
 
 // Get monthly expenses
-  Future<Map<String, double>> getMonthlyExpenses(int year, String type) async {
+  Future<Map<String, double>> getMonthlyExpenses(
+      int year, String type, List<String> categoryNames) async {
     List<Expenses> expenses = await getExpenses();
     Map<String, double> monthlyExpenses = {};
 
@@ -39,7 +40,9 @@ class ExpensesProvider extends ChangeNotifier {
     // Filter expenses for the specified year
     List<Expenses> filteredExpenses = expenses
         .where((expense) =>
-            (expense.date.year == year) && (expense.category.type == type))
+            (expense.date.year == year) &&
+            (expense.category.type == type) &&
+            (categoryNames.contains(expense.category.name)))
         .toList();
 
     // Update the amount list

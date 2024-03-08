@@ -35,6 +35,7 @@ dependencies:
   hive_flutter: ^1.1.0
   intl: ^0.18.0
   month_year_picker: ^0.3.0+1
+  multi_dropdown: ^2.1.4
   provider: ^6.0.5
   
 dev_dependencies:
