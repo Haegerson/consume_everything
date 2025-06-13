@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:expenso/providers/expense_provider.dart';
+import 'package:expenso/providers/expenses_provider.dart';
 import 'package:expenso/providers/incomes_provider.dart';
-import 'package:expenso/hives/expenses.dart';
-import 'package:expenso/hives/incomes.dart';
 import 'package:month_year_picker/month_year_picker.dart';
 import 'package:expenso/const/constants.dart';
+import 'package:expenso/models/category.dart';
+import 'package:expenso/models/expense.dart';
+import 'package:expenso/models/income.dart';
+import 'package:expenso/providers/categories_provider.dart';
 
 class HistoryScreen extends StatefulWidget {
   final VoidCallback refreshCallback;
@@ -63,7 +65,7 @@ class _HistoryScreenState extends State<HistoryScreen>
               // Expenses Tab
               Consumer<ExpensesProvider>(
                 builder: (context, expensesProvider, child) {
-                  return FutureBuilder<List<Expenses>>(
+                  return FutureBuilder<List<Expense>>(
                     future: expensesProvider.getExpenses(),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
@@ -74,7 +76,7 @@ class _HistoryScreenState extends State<HistoryScreen>
                         return Text('Error: ${snapshot.error}');
                       } else {
                         // If the Future is completed successfully, build the ListView
-                        List<Expenses> expenseList = snapshot.data!
+                        List<Expense> expenseList = snapshot.data!
                             .where((element) =>
                                 (element.date.year == selectedYear &&
                                     element.date.month == selectedMonth))
@@ -99,7 +101,7 @@ class _HistoryScreenState extends State<HistoryScreen>
               // Incomes Tab
               Consumer<IncomesProvider>(
                 builder: (context, incomesProvider, child) {
-                  return FutureBuilder<List<Incomes>>(
+                  return FutureBuilder<List<Income>>(
                     future: incomesProvider.getIncomes(),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
@@ -110,7 +112,7 @@ class _HistoryScreenState extends State<HistoryScreen>
                         return Text('Error: ${snapshot.error}');
                       } else {
                         // If the Future is completed successfully, build the ListView
-                        List<Incomes> incomeList = snapshot.data!
+                        List<Income> incomeList = snapshot.data!
                             .where((element) =>
                                 (element.date.year == selectedYear))
                             .toList();
@@ -156,7 +158,7 @@ class _HistoryScreenState extends State<HistoryScreen>
 }
 
 class ExpenseTile extends StatelessWidget {
-  final Expenses expense;
+  final Expense expense;
   final VoidCallback onTileMovedCallback;
   final VoidCallback refreshCallback;
 
@@ -169,8 +171,10 @@ class ExpenseTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final categProvider =
+        Provider.of<CategoriesProvider>(context, listen: false);
     return Dismissible(
-      key: Key(expense.key.toString()), // Use a unique key for each tile
+      key: ValueKey(expense.id), // Use a unique key for each tile
       background: Container(
         color: Colors.red, // Set the background color when swiping
         alignment: Alignment.centerRight,
@@ -184,14 +188,16 @@ class ExpenseTile extends StatelessWidget {
       onDismissed: (direction) {
         // Handle the dismissal here:
         Provider.of<ExpensesProvider>(context, listen: false)
-            .deleteExpense(expense);
+            .deleteExpense(expense.id!);
         refreshCallback();
       },
       onUpdate: (details) {
         onTileMovedCallback();
       },
       child: ListTile(
-        title: Text(expense.category.name),
+        title: Text(
+          categProvider.getById(expense.categoryId).name,
+        ),
         subtitle: Text(
             'Amount: \$${expense.amount.toStringAsFixed(2)}\nDate: ${expense.date.toString()}'),
         onTap: () {
@@ -203,7 +209,7 @@ class ExpenseTile extends StatelessWidget {
 }
 
 class IncomeTile extends StatelessWidget {
-  final Incomes income;
+  final Income income;
   final VoidCallback refreshCallback;
 
   const IncomeTile(
@@ -212,8 +218,10 @@ class IncomeTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final categProvider =
+        Provider.of<CategoriesProvider>(context, listen: false);
     return Dismissible(
-      key: Key(income.key.toString()), // Use a unique key for each tile
+      key: ValueKey(income.id), // Use a unique key for each tile
       background: Container(
         color: Colors.red, // Set the background color when swiping
         alignment: Alignment.centerRight,
@@ -227,11 +235,11 @@ class IncomeTile extends StatelessWidget {
       onDismissed: (direction) {
         // Handle the dismissal here:
         Provider.of<IncomesProvider>(context, listen: false)
-            .deleteIncome(income);
+            .deleteIncome(income.id!);
         refreshCallback();
       },
       child: ListTile(
-        title: Text(income.category.name),
+        title: Text(categProvider.getById(income.categoryId).name),
         subtitle: Text(
             'Amount: \$${income.amount.toStringAsFixed(2)}\nDate: ${income.date.toString()}'),
         onTap: () {

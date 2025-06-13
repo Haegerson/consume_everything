@@ -4,12 +4,13 @@ import 'package:expenso/const/constants.dart';
 import 'package:expenso/providers/categories_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:expenso/hives/incomes.dart';
-import 'package:expenso/hives/expenses.dart';
-import 'package:expenso/hives/categories.dart';
-import 'package:expenso/providers/expense_provider.dart';
+
+import 'package:expenso/providers/expenses_provider.dart';
 import 'package:expenso/providers/incomes_provider.dart';
-import 'package:expenso/old%20trash/category_data.dart';
+
+import 'package:expenso/models/category.dart';
+import 'package:expenso/models/expense.dart';
+import 'package:expenso/models/income.dart';
 
 class DropdownCategoryNames extends StatefulWidget {
   final Function(String) onCategorySelected;
@@ -84,7 +85,7 @@ class DropdownCategoryNamesState extends State<DropdownCategoryNames> {
   Future<List<String>> fetchCategoryNames() async {
     CategoriesProvider categProvider =
         Provider.of<CategoriesProvider>(context, listen: false);
-    List<Categories> categories = await categProvider.getCategories();
+    List<Category> categories = await categProvider.getCategories();
     List<String> categoryNames = widget.isExpense
         ? categories
             .where((element) =>

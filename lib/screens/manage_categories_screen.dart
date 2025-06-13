@@ -1,11 +1,12 @@
-import 'package:expenso/hives/categories.dart';
 import 'package:expenso/providers/categories_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:expenso/const/constants.dart';
 import 'package:expenso/dropdowns.dart';
 import 'package:expenso/providers/incomes_provider.dart';
-import 'package:expenso/providers/expense_provider.dart';
+import 'package:expenso/providers/expenses_provider.dart';
+
+import 'package:expenso/models/category.dart';
 
 class ManageCategoriesScreen extends StatefulWidget {
   const ManageCategoriesScreen({super.key});
@@ -91,14 +92,14 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                     }
                   }
 
-                  Categories newCategory = Categories(
-                      name: categoryName,
-                      type: selectedType,
-                      alertThreshold: alertThreshold);
+                  Category newCategory = Category(
+                    name: categoryName,
+                    type: selectedType,
+                    alertThreshold: alertThreshold,
+                  );
 
                   // Add logic to save the new category to your data store
                   await categoriesProvider.createCategory(newCategory);
-                  categoriesProvider.printCategories();
 
                   Navigator.of(context).pop(); // Close the dialog
                   setState(() {
@@ -135,7 +136,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
         ),
         body: TabBarView(controller: _tabController, children: [
           // Expense Categories
-          FutureBuilder<List<Categories>>(
+          FutureBuilder<List<Category>>(
             future: categoriesProvider.getCategories(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
@@ -146,8 +147,8 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                 return Text('Error: ${snapshot.error}');
               } else {
                 // If the Future is completed successfully, build the ListView
-                List<Categories> categoriesList = snapshot.data ?? [];
-                List<Categories> expenseCategoriesList = categoriesList
+                List<Category> categoriesList = snapshot.data ?? [];
+                List<Category> expenseCategoriesList = categoriesList
                     .where((category) =>
                         category.type == CategoryType.consumption ||
                         category.type == CategoryType.savings)
@@ -164,7 +165,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
           // Income Categories
           Consumer<CategoriesProvider>(
             builder: (context, categoriesProvider, child) {
-              return FutureBuilder<List<Categories>>(
+              return FutureBuilder<List<Category>>(
                 future: categoriesProvider.getCategories(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
@@ -175,8 +176,8 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                     return Text('Error: ${snapshot.error}');
                   } else {
                     // If the Future is completed successfully, build the ListView
-                    List<Categories> categoriesList = snapshot.data ?? [];
-                    List<Categories> incomeCategoriesList = categoriesList
+                    List<Category> categoriesList = snapshot.data ?? [];
+                    List<Category> incomeCategoriesList = categoriesList
                         .where(
                             (category) => category.type == CategoryType.income)
                         .toList();
@@ -206,14 +207,14 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
 }
 
 class CategoryTile extends StatelessWidget {
-  final Categories category;
+  final Category category;
 
   const CategoryTile({required this.category, Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Dismissible(
-      key: Key(category.key.toString()), // Use a unique key for each tile
+      key: ValueKey(category.id), // Use a unique key for each tile
       background: Container(
         color: Colors.red, // Set the background color when swiping
         alignment: Alignment.centerRight,
@@ -227,7 +228,7 @@ class CategoryTile extends StatelessWidget {
       onDismissed: (direction) {
         // Handle the dismissal here:
         Provider.of<CategoriesProvider>(context, listen: false)
-            .deleteCategory(category);
+            .deleteCategory(category.id!);
       },
       child: ListTile(
         title: Text(category.name),

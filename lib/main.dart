@@ -4,12 +4,8 @@ import 'package:expenso/const/constants.dart';
 import 'package:expenso/providers/categories_provider.dart';
 import 'package:expenso/screens/statistics_overview_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/adapters.dart';
 import 'package:provider/provider.dart';
-import 'package:expenso/hives/incomes.dart';
-import 'package:expenso/hives/expenses.dart';
-import 'package:expenso/hives/categories.dart';
-import 'package:expenso/providers/expense_provider.dart';
+import 'package:expenso/providers/expenses_provider.dart';
 import 'package:expenso/providers/incomes_provider.dart';
 import 'package:expenso/screens/history_screen.dart';
 import 'package:expenso/screens/manage_categories_screen.dart';
@@ -17,24 +13,39 @@ import 'package:expenso/dropdowns.dart';
 import 'package:month_year_picker/month_year_picker.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-void main() async {
+import 'package:expenso/models/category.dart';
+import 'package:expenso/models/expense.dart';
+import 'package:expenso/models/income.dart';
+import 'services/api_client.dart';
+import 'package:expenso/services/category_api.dart';
+import 'package:expenso/services/expense_api.dart';
+import 'package:expenso/services/income_api.dart';
+
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Hive.initFlutter();
-  Hive.registerAdapter(ExpensesAdapter());
-  Hive.registerAdapter(IncomesAdapter());
-  Hive.registerAdapter(CategoriesAdapter());
+  final apiClient =
+      ApiClient(baseUrl: 'https://<your-xano-slug>.xano.io/api:1/');
 
-  // Initialize locale data for date formatting
-  await initializeDateFormatting('en_US');
-
-  runApp(MultiProvider(providers: [
-    ChangeNotifierProvider<ExpensesProvider>(create: (_) => ExpensesProvider()),
-    ChangeNotifierProvider<IncomesProvider>(create: (_) => IncomesProvider()),
-    ChangeNotifierProvider<CategoriesProvider>(
-        create: (_) => CategoriesProvider()),
-  ], child: const MyApp()));
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => CategoriesProvider(CategoryApi(apiClient)),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => ExpensesProvider(ExpenseApi(apiClient)),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => IncomesProvider(IncomeApi(apiClient)),
+        ),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -67,19 +78,24 @@ class OverviewScreen extends StatefulWidget {
 }
 
 class _OverviewScreenState extends State<OverviewScreen> {
-  final ExpensesProvider expensesProvider = ExpensesProvider();
-  final IncomesProvider incomesProvider = IncomesProvider();
-  final CategoriesProvider categProvider = CategoriesProvider();
   ValueNotifier<int> _updateNotifier = ValueNotifier<int>(0);
+
   void refreshData() {
+    final expensesProvider = context.read<ExpensesProvider>();
+    final incomesProvider = context.read<IncomesProvider>();
+    final categProvider = context.read<CategoriesProvider>();
+
     setState(() {
       _updateNotifier
           .value++; // Increment the ValueNotifier to trigger a rebuild
-      // Trigger a rebuild of the relevant data
-      _currentConsumeExpenses =
-          expensesProvider.getCurrentExpenses(CategoryType.consumption);
-      _currentSavingsExpenses =
-          expensesProvider.getCurrentExpenses(CategoryType.savings);
+      _currentConsumeExpenses = expensesProvider.getCurrentExpenses(
+        CategoryType.consumption,
+        categoriesProvider: categProvider,
+      );
+      _currentSavingsExpenses = expensesProvider.getCurrentExpenses(
+        CategoryType.savings,
+        categoriesProvider: categProvider,
+      );
       _currentIncomes = incomesProvider.getCurrentIncomes();
     });
   }
@@ -95,18 +111,30 @@ class _OverviewScreenState extends State<OverviewScreen> {
   @override
   void initState() {
     super.initState();
-    _currentConsumeExpenses =
-        expensesProvider.getCurrentExpenses(CategoryType.consumption);
-    _currentSavingsExpenses =
-        expensesProvider.getCurrentExpenses(CategoryType.savings);
-    _currentIncomes = incomesProvider.getCurrentIncomes();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final expensesProvider = context.read<ExpensesProvider>();
+      final incomesProvider = context.read<IncomesProvider>();
+      final categProvider = context.read<CategoriesProvider>();
+
+      setState(() {
+        _currentConsumeExpenses = expensesProvider.getCurrentExpenses(
+          CategoryType.consumption,
+          categoriesProvider: categProvider,
+        );
+        _currentSavingsExpenses = expensesProvider.getCurrentExpenses(
+          CategoryType.savings,
+          categoriesProvider: categProvider,
+        );
+        _currentIncomes = incomesProvider.getCurrentIncomes();
+      });
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    // CategoriesProvider categProvider = Provider.of<CategoriesProvider>(context);
-    // ExpensesProvider expensesProvider = Provider.of<ExpensesProvider>(context);
-    // IncomesProvider incomesProvider = Provider.of<IncomesProvider>(context);
+    final categProvider = context.read<CategoriesProvider>();
+    final expensesProvider = context.read<ExpensesProvider>();
+    final incomesProvider = context.read<IncomesProvider>();
 
     void showAddCategoryDialog(BuildContext context) {
       TextEditingController nameController = TextEditingController();
@@ -162,14 +190,13 @@ class _OverviewScreenState extends State<OverviewScreen> {
                     alertThreshold = null;
                   }
                 }
-                Categories newCategory = Categories(
+                Category newCategory = Category(
                     name: categoryName,
                     type: selectedType,
                     alertThreshold: alertThreshold);
 
                 // Add logic to save the new category to your data store
                 await categProvider.createCategory(newCategory);
-                categProvider.printCategories();
 
                 Navigator.of(context).pop(); // Close the dialog
                 setState(() {
@@ -194,12 +221,16 @@ class _OverviewScreenState extends State<OverviewScreen> {
     }
 
     void showAddExpenseDialog(BuildContext context) async {
-      List<Categories> categories = await categProvider.getCategories();
-      Categories selectedCategory = categories[0];
+      List<Category> categories = await categProvider.getCategories();
+      Category selectedCategory = categories[0];
       String selectedCategoryName = selectedCategory.name;
 
-      Expenses newExp =
-          Expenses(category: categories[0], amount: 0.0, date: DateTime.now());
+      Expense newExp = Expense(
+        id: null,
+        categoryId: categories[0].id!,
+        amount: 0.0,
+        date: DateTime.now(),
+      );
       TextEditingController amountController = TextEditingController();
       TextEditingController dateController = TextEditingController();
       TextEditingController commentController = TextEditingController();
@@ -267,18 +298,21 @@ class _OverviewScreenState extends State<OverviewScreen> {
                 // Update newExp with the entered values
                 selectedCategory =
                     categProvider.getCategoryByName(selectedCategoryName);
-                newExp.category = selectedCategory;
-                newExp.amount = double.parse(amountController.text);
-                newExp.date = DateTime.parse(dateController.text);
-                newExp.comment = commentController.text;
+                newExp = Expense(
+                  id: null,
+                  categoryId: selectedCategory.id!,
+                  amount: double.parse(amountController.text),
+                  date: DateTime.parse(dateController.text),
+                  comment: commentController.text,
+                );
 
                 // Add the new Expense to database:
 
                 expensesProvider.createExpense(newExp);
-                _currentConsumeExpenses = expensesProvider
-                    .getCurrentExpenses(CategoryType.consumption);
-                _currentSavingsExpenses =
-                    expensesProvider.getCurrentExpenses(CategoryType.savings);
+                _currentConsumeExpenses = expensesProvider.getCurrentExpenses(
+                  CategoryType.consumption,
+                  categoriesProvider: categProvider,
+                );
 
                 // Close the dialog
                 Navigator.of(context).pop();
@@ -299,12 +333,16 @@ class _OverviewScreenState extends State<OverviewScreen> {
     }
 
     void showAddIncomeDialog(BuildContext context) async {
-      List<Categories> categories = await categProvider.getCategories();
-      Categories selectedCategory = categories[0];
+      List<Category> categories = await categProvider.getCategories();
+      Category selectedCategory = categories[0];
       String selectedCategoryName = selectedCategory.name;
+      Income newInc = Income(
+        id: null,
+        categoryId: categories[0].id!,
+        amount: 0.0,
+        date: DateTime.now(),
+      );
 
-      Incomes newInc =
-          Incomes(category: categories[0], amount: 0.0, date: DateTime.now());
       TextEditingController amountController = TextEditingController();
       TextEditingController dateController = TextEditingController();
       TextEditingController commentController = TextEditingController();
@@ -368,24 +406,28 @@ class _OverviewScreenState extends State<OverviewScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () {
-                // Update newExp with the entered values
-                selectedCategory =
+              onPressed: () async {
+                final selectedCategory =
                     categProvider.getCategoryByName(selectedCategoryName);
-                newInc.category = selectedCategory;
-                newInc.amount = double.parse(amountController.text);
-                newInc.date = DateTime.parse(dateController.text);
-                newInc.comment = commentController.text;
 
-                // Add the new Income to database:
+                // Recreate newInc with the proper fields
+                final newInc = Income(
+                  id: null, // let Xano assign the real ID
+                  categoryId: selectedCategory.id!,
+                  amount: double.parse(amountController.text),
+                  comment: commentController.text,
+                  date: DateTime.parse(dateController.text),
+                );
 
-                incomesProvider.createIncome(newInc);
+                // Send it to Xano
+                await incomesProvider.createIncome(newInc);
+
+                // Refresh your future
                 _currentIncomes = incomesProvider.getCurrentIncomes();
 
-                // Close the dialog
+                // Close dialog and trigger rebuild
                 Navigator.of(context).pop();
-                _updateNotifier
-                    .value++; // Increment the ValueNotifier to trigger a rebuild
+                _updateNotifier.value++;
               },
               child: Text("Save"),
             ),
@@ -408,7 +450,8 @@ class _OverviewScreenState extends State<OverviewScreen> {
                 _currentConsumeExpenses,
                 _currentSavingsExpenses,
                 _currentIncomes,
-                expensesProvider.getCategoriesOverThreshold()
+                expensesProvider.getCategoriesOverThreshold(
+                    categoriesProvider: categProvider),
               ]), // Use Future.wait to wait for all futures
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -575,10 +618,16 @@ class _OverviewScreenState extends State<OverviewScreen> {
                             showAddExpenseDialog(context);
                             setState(() {
                               // Update the state variables
-                              _currentConsumeExpenses = expensesProvider
-                                  .getCurrentExpenses(CategoryType.consumption);
-                              _currentSavingsExpenses = expensesProvider
-                                  .getCurrentExpenses(CategoryType.savings);
+                              _currentConsumeExpenses =
+                                  expensesProvider.getCurrentExpenses(
+                                CategoryType.consumption,
+                                categoriesProvider: categProvider,
+                              );
+                              _currentSavingsExpenses =
+                                  expensesProvider.getCurrentExpenses(
+                                CategoryType.savings,
+                                categoriesProvider: categProvider,
+                              );
                             });
                           },
                           tooltip: 'Add Expense',

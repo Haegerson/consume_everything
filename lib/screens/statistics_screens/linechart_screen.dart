@@ -4,7 +4,7 @@ import 'package:expenso/providers/incomes_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:expenso/providers/expense_provider.dart';
+import 'package:expenso/providers/expenses_provider.dart';
 import 'package:expenso/dropdowns.dart';
 import 'package:expenso/hives/categories.dart';
 import 'package:multi_dropdown/multiselect_dropdown.dart';

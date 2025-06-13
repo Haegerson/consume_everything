@@ -2,9 +2,8 @@ import 'package:expenso/screens/statistics_screens/barchart_screen.dart';
 import 'package:expenso/screens/statistics_screens/linechart_screen.dart';
 import 'package:expenso/screens/statistics_screens/piechart_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:expenso/providers/categories_provider.dart';
-import 'package:expenso/hives/categories.dart';
+import 'package:expenso/models/category.dart';
 
 class StatisticsOverviewScreen extends StatefulWidget {
   const StatisticsOverviewScreen({Key? key}) : super(key: key);
@@ -15,7 +14,7 @@ class StatisticsOverviewScreen extends StatefulWidget {
 }
 
 class _StatisticsOverviewScreenState extends State<StatisticsOverviewScreen> {
-  final CategoriesProvider _categoriesProvider = CategoriesProvider();
+  late final CategoriesProvider _categoriesProvider;
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +28,7 @@ class _StatisticsOverviewScreenState extends State<StatisticsOverviewScreen> {
           children: [
             _buildContainer('LineChart', () async {
               // Retrieve all categories
-              List<Categories> categories =
+              List<Category> categories =
                   await _categoriesProvider.getCategories();
               // Navigate to FlowChartScreen when the first container is clicked
               Navigator.push(
@@ -78,5 +77,3 @@ class _StatisticsOverviewScreenState extends State<StatisticsOverviewScreen> {
     );
   }
 }
-// https://pub.dev/packages/fl_chart
-// https://pub.dev/packages/syncfusion_flutter_charts

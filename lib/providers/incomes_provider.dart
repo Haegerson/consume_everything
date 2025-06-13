@@ -1,79 +1,102 @@
-import 'package:expenso/hives/incomes.dart';
-import 'package:hive/hive.dart';
-import 'package:flutter/foundation.dart';
 import 'dart:collection';
+import 'package:flutter/foundation.dart';
+
+import 'package:expenso/models/income.dart';
+import 'package:expenso/services/income_api.dart';
+import 'package:expenso/providers/categories_provider.dart';
 
 class IncomesProvider extends ChangeNotifier {
-  List<Incomes> _incomes = [];
-  UnmodifiableListView<Incomes> get incomes => UnmodifiableListView(_incomes);
-  final String incomesHiveBox = 'incomes-box';
+  final IncomeApi _api;
+  final List<Income> _incomes = [];
 
-  // Create test expense
-  Future<void> createIncome(Incomes inc) async {
-    Box<Incomes> box = await Hive.openBox<Incomes>(incomesHiveBox);
-    await box.add(inc);
-    _incomes.add(inc);
-    _incomes = box.values.toList();
-    notifyListeners();
+  UnmodifiableListView<Income> get incomes => UnmodifiableListView(_incomes);
+
+  bool _loading = false;
+  String? _error;
+  bool get isLoading => _loading;
+  String? get error => _error;
+
+  IncomesProvider(this._api);
+
+  Future<void> loadIncomes() async {
+    _setLoading(true);
+    try {
+      final fetched = await _api.fetchAll();
+      _incomes
+        ..clear()
+        ..addAll(fetched);
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _setLoading(false);
+    }
   }
 
-  // Get list of all Incomes
-  Future<List<Incomes>> getIncomes() async {
-    Box<Incomes> box = await Hive.openBox<Incomes>(incomesHiveBox);
-    _incomes = box.values.toList();
+  Future<List<Income>> getIncomes() async {
+    if (_incomes.isEmpty) await loadIncomes();
     return _incomes;
   }
 
-  // remove a n income
-  Future<void> deleteIncome(Incomes inc) async {
-    Box<Incomes> box = await Hive.openBox<Incomes>(incomesHiveBox);
-    await box.delete(inc.key);
-    _incomes = box.values.toList();
-    notifyListeners();
+  Future<void> createIncome(Income inc) async {
+    _setLoading(true);
+    try {
+      // Let Xano assign the real ID by passing null
+      final toCreate = Income(
+        id: null,
+        categoryId: inc.categoryId,
+        amount: inc.amount,
+        comment: inc.comment,
+        date: inc.date,
+      );
+      final created = await _api.create(toCreate);
+      _incomes.add(created);
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _setLoading(false);
+    }
   }
 
-  // Get monthly expenses
+  Future<void> deleteIncome(int id) async {
+    _setLoading(true);
+    try {
+      await _api.delete(id);
+      _incomes.removeWhere((i) => i.id == id);
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// Monthly totals for a given year
   Future<Map<String, double>> getMonthlyIncomes(int year) async {
-    List<Incomes> incomes = await getIncomes();
-    Map<String, double> monthlyIncomes = {};
+    if (_incomes.isEmpty) await loadIncomes();
 
-    // Initialize monthlyExpenses with all months set to zero
-    for (int month = 1; month <= 12; month++) {
-      monthlyIncomes[month.toString()] = 0.0;
+    final monthly = {for (int m = 1; m <= 12; m++) '$m': 0.0};
+
+    for (final inc in _incomes.where((i) => i.date.year == year)) {
+      final key = '${inc.date.month}';
+      monthly[key] = monthly[key]! + inc.amount;
     }
-
-    // Filter expenses for the specified year
-    List<Incomes> filteredIncomes =
-        incomes.where((income) => income.date.year == year).toList();
-
-    // Update the amount list
-    for (Incomes income in filteredIncomes) {
-      String month = '${income.date.month}';
-      if (monthlyIncomes.containsKey(month)) {
-        monthlyIncomes[month] = monthlyIncomes[month]! + income.amount;
-      } else {
-        monthlyIncomes[month] = income.amount;
-      }
-    }
-    return monthlyIncomes;
+    return monthly;
   }
 
-  //Expenses of current month
+  /// Total for the current month
   Future<double> getCurrentIncomes() async {
-    int year = DateTime.now().year;
-    int month = DateTime.now().month;
-    List<Incomes> incomes = await getIncomes();
+    if (_incomes.isEmpty) await loadIncomes();
 
-    List<Incomes> filteredIncomes = incomes
-        .where((income) =>
-            (income.date.year == year) && (income.date.month == month))
-        .toList();
+    final now = DateTime.now();
+    return _incomes
+        .where((i) => i.date.year == now.year && i.date.month == now.month)
+        .fold<double>(
+          0.0,
+          (double sum, income) => sum + income.amount,
+        );
+  }
 
-    double sum = 0;
-
-    for (Incomes income in filteredIncomes) {
-      sum += income.amount;
-    }
-    return sum;
+  void _setLoading(bool v) {
+    _loading = v;
+    notifyListeners();
   }
 }

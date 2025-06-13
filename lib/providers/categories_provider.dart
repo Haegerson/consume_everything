@@ -1,94 +1,97 @@
-import 'package:expenso/const/constants.dart';
-import 'package:expenso/hives/categories.dart';
-import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
-import 'package:flutter/foundation.dart';
 import 'dart:collection';
 
+import 'package:flutter/material.dart';
+
+import 'package:expenso/models/category.dart';
+import 'package:expenso/services/category_api.dart';
+import 'package:expenso/const/constants.dart';
+
 class CategoriesProvider extends ChangeNotifier {
-  List<Categories> _categories = [];
-  UnmodifiableListView<Categories> get categories =>
+  final CategoryApi _api;
+  final List<Category> _categories = [];
+
+  UnmodifiableListView<Category> get categories =>
       UnmodifiableListView(_categories);
-  final String categoriesHiveBox = 'categories-box';
 
-  // Create test categories
-  Future<void> createCategory(Categories cat) async {
-    Box<Categories> box = await Hive.openBox<Categories>(categoriesHiveBox);
+  bool _loading = false;
+  String? _error;
+  bool get isLoading => _loading;
+  String? get error => _error;
 
-    if (!box.values.contains(cat)) {
-      print("adding category...");
-      await box.add(cat);
-      _categories.add(cat);
-      _categories = box.values.toList();
-      notifyListeners();
-    } else {}
+  CategoriesProvider(this._api);
+
+  Future<void> loadCategories() async {
+    _setLoading(true);
+    try {
+      final fetched = await _api.fetchAll();
+      _categories
+        ..clear()
+        ..addAll(fetched);
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _setLoading(false);
+    }
   }
 
-  // FOR DEBUG ONLY
-  Future<void> deleteAllCategories() async {
-    Box<Categories> box = await Hive.openBox<Categories>(categoriesHiveBox);
-
-    print("deleting categories...");
-    await box.clear();
-    notifyListeners();
-  }
-
-  // Get test categories
-  Future<List<Categories>> getCategories() async {
-    Box<Categories> box = await Hive.openBox<Categories>(categoriesHiveBox);
-    _categories = box.values.toList();
+  Future<List<Category>> getCategories() async {
+    if (_categories.isEmpty) {
+      await loadCategories();
+    }
     return _categories;
   }
 
-  // remove a test category
-  Future<void> deleteCategory(Categories cat) async {
-    Box<Categories> box = await Hive.openBox<Categories>(categoriesHiveBox);
-    await box.delete(cat.key);
-    _categories = box.values.toList();
-    notifyListeners();
-  }
-
-  // Print the name and type of each category
-  Future<void> printCategories() async {
-    Box<Categories> box = await Hive.openBox<Categories>(categoriesHiveBox);
-
-    for (Categories category in box.values) {
-      print("Category Name: ${category.name}, Type: ${category.type}");
+  Future<void> createCategory(Category cat) async {
+    _setLoading(true);
+    try {
+      final created = await _api.create(cat);
+      _categories.add(created);
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _setLoading(false);
     }
   }
 
-  // Get a category by name
-  Categories getCategoryByName(String categoryName) {
-    return _categories.firstWhere((category) => category.name == categoryName);
+  Future<void> deleteCategory(int id) async {
+    _setLoading(true);
+    try {
+      await _api.delete(id);
+      _categories.removeWhere((c) => c.id == id);
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _setLoading(false);
+    }
   }
 
-  // Get a map of category names and their thresholds
+  Category getCategoryByName(String name) =>
+      _categories.firstWhere((c) => c.name == name);
+
   Future<Map<String, double?>> getCategoryThresholds(String type) async {
-    Box<Categories> box = await Hive.openBox<Categories>(categoriesHiveBox);
-    _categories = box.values.toList();
-    Iterable<Categories> filteredCategories =
-        _categories.where((element) => (element.type == type));
-
-    Map<String, double?> categoryThresholds = {};
-
-    for (Categories category in filteredCategories) {
-      categoryThresholds[category.name] = category.alertThreshold;
-    }
-
-    return categoryThresholds;
+    // ensure categories are loaded
+    if (_categories.isEmpty) await loadCategories();
+    return {
+      for (final c in _categories.where((c) => c.type == type))
+        c.name: c.alertThreshold
+    };
   }
+
+  Category getById(int id) => _categories.firstWhere((c) => c.id == id);
 
   Future<Map<String, Color>> generateCategoryColors() async {
-    Box<Categories> box = await Hive.openBox<Categories>(categoriesHiveBox);
-    _categories = box.values.toList();
-
-    Map<String, Color> categoryColors = {};
+    if (_categories.isEmpty) await loadCategories();
+    final Map<String, Color> map = {};
     int i = 0;
-
-    for (Categories category in _categories) {
-      categoryColors[category.name] = colorArray[i % colorArray.length];
+    for (final c in _categories) {
+      map[c.name] = colorArray[i % colorArray.length];
       i++;
     }
-    return categoryColors;
+    return map;
+  }
+
+  void _setLoading(bool v) {
+    _loading = v;
+    notifyListeners();
   }
 }
