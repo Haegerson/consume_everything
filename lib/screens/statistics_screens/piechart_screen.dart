@@ -3,6 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:expenso/providers/expenses_provider.dart';
+import 'package:expenso/providers/categories_provider.dart';
 import 'package:expenso/dropdowns.dart';
 import 'package:month_year_picker/month_year_picker.dart';
 // https://www.youtube.com/watch?v=rZx_isqXrhg for touch effects
@@ -15,7 +16,8 @@ class PieChartScreen extends StatefulWidget {
 }
 
 class _PieChartScreenState extends State<PieChartScreen> {
-  final ExpensesProvider _expensesProvider = ExpensesProvider();
+  late ExpensesProvider _expensesProvider;
+  late CategoriesProvider _categoriesProvider;
   late int selectedStartYear;
   late int selectedStartMonth;
   late int selectedEndYear;
@@ -29,11 +31,13 @@ class _PieChartScreenState extends State<PieChartScreen> {
     selectedEndYear = DateTime.now().year.toInt();
     selectedStartMonth = DateTime.now().month.toInt();
     selectedEndMonth = DateTime.now().month.toInt();
+    _expensesProvider = context.read<ExpensesProvider>();
     _categoryData = _expensesProvider.calculateCategoryPercentagesBetween(
         selectedStartYear,
         selectedStartMonth,
         selectedEndYear,
-        selectedEndMonth);
+        selectedEndMonth,
+        categoriesProvider: _categoriesProvider);
   }
 
   @override
@@ -44,7 +48,8 @@ class _PieChartScreenState extends State<PieChartScreen> {
             selectedStartYear,
             selectedStartMonth,
             selectedEndYear,
-            selectedEndMonth);
+            selectedEndMonth,
+            categoriesProvider: _categoriesProvider);
       });
     }
 

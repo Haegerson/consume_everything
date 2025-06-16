@@ -6,11 +6,12 @@ import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:expenso/providers/expenses_provider.dart';
 import 'package:expenso/dropdowns.dart';
-import 'package:expenso/hives/categories.dart';
+import 'package:expenso/models/category.dart';
 import 'package:multi_dropdown/multiselect_dropdown.dart';
+import 'package:expenso/models/category.dart';
 
 class LineChartScreen extends StatefulWidget {
-  final List<Categories>
+  final List<Category>
       allCategories; // only for first call of filling selectedCategories
 
   const LineChartScreen({super.key, required this.allCategories});
@@ -20,13 +21,13 @@ class LineChartScreen extends StatefulWidget {
 }
 
 class _LineChartScreenState extends State<LineChartScreen> {
-  final ExpensesProvider _expensesProvider = ExpensesProvider();
-  final IncomesProvider _incomesProvider = IncomesProvider();
-  final CategoriesProvider _categoriesProvider = CategoriesProvider();
+  late ExpensesProvider _expensesProvider;
+  late IncomesProvider _incomesProvider;
+  late CategoriesProvider _categoriesProvider;
   late Future<Map<String, double>> _monthlyConsumeExpenses;
   late Future<Map<String, double>> _monthlySavingsExpenses;
   late Future<Map<String, double>> _monthlyIncomes;
-  late Future<List<Categories>> _categories;
+  late Future<List<Category>> _categories;
   late int selectedYear;
 
   final Gradient consumeExpenseGradient = const LinearGradient(
@@ -44,11 +45,16 @@ class _LineChartScreenState extends State<LineChartScreen> {
 //method to update selected categories
   void updateSelectedCategories(List<String> selected) {
     setState(() {
-      selectedCategories = selected;
+      final ids = selected
+          .map((name) => _categoriesProvider.getCategoryByName(name).id!)
+          .toList();
+
       _monthlyConsumeExpenses = _expensesProvider.getMonthlyExpenses(
-          selectedYear, CategoryType.consumption, selectedCategories);
+          selectedYear, CategoryType.consumption, ids,
+          categoriesProvider: _categoriesProvider);
       _monthlySavingsExpenses = _expensesProvider.getMonthlyExpenses(
-          selectedYear, CategoryType.savings, selectedCategories);
+          selectedYear, CategoryType.savings, ids,
+          categoriesProvider: _categoriesProvider);
       _monthlyIncomes = _incomesProvider.getMonthlyIncomes(selectedYear);
     });
   }
@@ -59,10 +65,22 @@ class _LineChartScreenState extends State<LineChartScreen> {
     selectedCategories =
         widget.allCategories.map((category) => category.name).toList();
     selectedYear = DateTime.now().year.toInt();
+
+    selectedCategories = widget.allCategories.map((c) => c.name).toList();
+    // build initial futures with IDs, not names:
+    final ids = selectedCategories
+        .map((name) => _categoriesProvider.getCategoryByName(name).id!)
+        .toList();
+
+    _expensesProvider = context.read<ExpensesProvider>();
+    _incomesProvider = context.read<IncomesProvider>();
+    _categoriesProvider = context.read<CategoriesProvider>();
     _monthlyConsumeExpenses = _expensesProvider.getMonthlyExpenses(
-        selectedYear, CategoryType.consumption, selectedCategories);
+        selectedYear, CategoryType.consumption, ids,
+        categoriesProvider: _categoriesProvider);
     _monthlySavingsExpenses = _expensesProvider.getMonthlyExpenses(
-        selectedYear, CategoryType.savings, selectedCategories);
+        selectedYear, CategoryType.savings, ids,
+        categoriesProvider: _categoriesProvider);
     _monthlyIncomes = _incomesProvider.getMonthlyIncomes(selectedYear);
     _categories = _categoriesProvider.getCategories();
   }
@@ -92,8 +110,8 @@ class _LineChartScreenState extends State<LineChartScreen> {
                 (snapshot.data as List<dynamic>)[1] as Map<String, double>;
             Map<String, double> monthlyIncomes =
                 (snapshot.data as List<dynamic>)[2] as Map<String, double>;
-            List<Categories> categories =
-                (snapshot.data as List<dynamic>)[3] as List<Categories>;
+            List<Category> categories =
+                (snapshot.data as List<dynamic>)[3] as List<Category>;
 
             List<FlSpot> consumeExpenseSpotList = monthlyConsumeExpenses.entries
                 .map((entry) => FlSpot(
@@ -151,18 +169,29 @@ class _LineChartScreenState extends State<LineChartScreen> {
                       selectedYear,
                       (int? value) {
                         if (value != null) {
+                          final categoriesProvider =
+                              context.read<CategoriesProvider>();
+
+                          // Map your selected category names → their int IDs
+                          final List<int> selectedIds = selectedCategories
+                              .map((name) => categoriesProvider
+                                  .getCategoryByName(name)
+                                  .id!)
+                              .toList();
                           setState(() {
                             selectedYear = value;
                             _monthlyConsumeExpenses =
                                 _expensesProvider.getMonthlyExpenses(
                                     selectedYear,
                                     CategoryType.consumption,
-                                    selectedCategories);
+                                    selectedIds,
+                                    categoriesProvider: _categoriesProvider);
                             _monthlySavingsExpenses =
                                 _expensesProvider.getMonthlyExpenses(
                                     selectedYear,
                                     CategoryType.savings,
-                                    selectedCategories);
+                                    selectedIds,
+                                    categoriesProvider: _categoriesProvider);
                             _monthlyIncomes = _incomesProvider
                                 .getMonthlyIncomes(selectedYear);
                           });
@@ -252,7 +281,7 @@ class LineTitles {
 }
 
 class CategorySelectionDialog extends StatefulWidget {
-  final List<Categories> categories;
+  final List<Category> categories;
   final List<String> selectedCategories;
   final ValueChanged<List<String>> onCategoriesSelected;
 

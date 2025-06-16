@@ -16,8 +16,8 @@ class BarChartScreen extends StatefulWidget {
 }
 
 class _BarChartScreenState extends State<BarChartScreen> {
-  final ExpensesProvider _expensesProvider = ExpensesProvider();
-  final CategoriesProvider _categoriesProvider = CategoriesProvider();
+  late final ExpensesProvider _expensesProvider;
+  late final CategoriesProvider _categoriesProvider;
   late int selectedYear;
   late int selectedMonth;
   late Future<Map<String, Map<String, dynamic>>> _categoryData;
@@ -31,9 +31,12 @@ class _BarChartScreenState extends State<BarChartScreen> {
     super.initState();
     selectedYear = DateTime.now().year.toInt();
     selectedMonth = DateTime.now().month.toInt();
+    _expensesProvider = context.read<ExpensesProvider>();
+    _categoriesProvider = context.read<CategoriesProvider>();
 
     _categoryData = _expensesProvider.calculateCategoryPercentagesBetween(
-        selectedYear, selectedMonth, selectedYear, selectedMonth);
+        selectedYear, selectedMonth, selectedYear, selectedMonth,
+        categoriesProvider: _categoriesProvider);
     _categoryThresholds =
         _categoriesProvider.getCategoryThresholds(CategoryType.consumption);
     _categoryColors = _categoriesProvider.generateCategoryColors();
@@ -44,7 +47,8 @@ class _BarChartScreenState extends State<BarChartScreen> {
     void _refreshChart() {
       setState(() {
         _categoryData = _expensesProvider.calculateCategoryPercentagesBetween(
-            selectedYear, selectedMonth, selectedYear, selectedMonth);
+            selectedYear, selectedMonth, selectedYear, selectedMonth,
+            categoriesProvider: _categoriesProvider);
       });
     }
 
